@@ -20,8 +20,9 @@ RUN apk add --no-cache openssl
 COPY apps/backend/package*.json ./apps/backend/
 RUN cd apps/backend && npm ci
 
-# Copy full backend source
+# Copy full backend source + shared libs (needed for TypeScript path aliases)
 COPY apps/backend/ ./apps/backend/
+COPY libs/ ./libs/
 
 # Generate Prisma client (schema is at apps/backend/prisma/schema.prisma)
 RUN cd apps/backend && npx prisma generate
