@@ -1,5 +1,7 @@
 # 🏢 OpenClaw Virtual Office
 
+<img src="./0227 (1).gif" alt="OpenClaw Virtual Office Demo" width="100%">
+
 > Real-time виртуальный офис для визуализации работы AI-агентов [OpenClaw](https://github.com/openclaw/openclaw)
 
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org)
