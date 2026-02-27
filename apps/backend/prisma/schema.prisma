@@ -256,3 +256,32 @@ model Inbox {
   @@index([eventId])
   @@map("inbox")
 }
+
+// ==========================================
+// TASKS (Task Management BC)
+// ==========================================
+enum TaskStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+model Task {
+  id              String     @id @default(uuid())
+  tenantId        String
+  title           String
+  description     String?
+  status          TaskStatus @default(PENDING)
+  agentId         String?    // ID агента-исполнителя (из таблицы agents)
+  agentName       String?    // имя агента для отображения
+  sessionKey      String?    // OpenClaw session key для истории
+  result          String?    // краткий итог
+  historySnapshot Json?      @map("history_snapshot") // кеш истории сессии (защита от cleanup JSONL файлов)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("tasks")
+}

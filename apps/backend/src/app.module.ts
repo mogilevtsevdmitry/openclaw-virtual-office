@@ -14,6 +14,7 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { CommunicationModule } from './modules/communication/communication.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { OpenClawModule } from './modules/openclaw/openclaw.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 import { RequestContextMiddleware } from './logging/request-context.middleware';
 import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
 
@@ -52,6 +53,7 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
     CommunicationModule, // Chat rooms + messages
     AuditModule,      // Audit log + cleanup cron
     OpenClawModule,   // OpenClaw system agents roster
+    TasksModule,      // Task management
   ],
   providers: [
     // Global JWT guard (bypass with @Public() decorator)
