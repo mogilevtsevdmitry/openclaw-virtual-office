@@ -1,0 +1,121 @@
+# =============================================================================
+# OpenClaw Virtual Office — Docker Compose
+# Сервисы: postgres, backend, proxy, cloudflared
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 16
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: ovo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-friday_db}
+      POSTGRES_USER: ${DB_USER:-friday}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}
+    volumes:
+      # Персистентное хранилище данных
+      - postgres_data:/var/lib/postgresql/data
+      # Инициализация БД из дампа (выполняется только при первом старте с пустым volume)
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-friday} -d ${DB_NAME:-friday_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ovo_network
+
+  # ---------------------------------------------------------------------------
+  # Backend (NestJS)
+  # ---------------------------------------------------------------------------
+  backend:
+    image: ghcr.io/mogilevtsevdmitry/openclaw-virtual-office/backend:latest
+    container_name: ovo_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Переопределяем DATABASE_URL — указывает на контейнер postgres
+      DATABASE_URL: postgresql://${DB_USER:-friday}:${DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}@postgres:${DB_PORT:-5432}/${DB_NAME:-friday_db}?schema=public
+      DB_HOST: postgres
+      DB_PORT: ${DB_PORT:-5432}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      OPENCLAW_HOME: /root/.openclaw
+    volumes:
+      - ${OPENCLAW_HOME:-/root/.openclaw}:/root/.openclaw:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+    networks:
+      - ovo_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ---------------------------------------------------------------------------
+  # Proxy (Node.js: статика + API прокси)
+  # ---------------------------------------------------------------------------
+  proxy:
+    image: ghcr.io/mogilevtsevdmitry/openclaw-virtual-office/proxy:latest
+    container_name: ovo_proxy
+    restart: unless-stopped
+    environment:
+      BACKEND_HOST: backend
+      BACKEND_PORT: ${PORT:-3000}
+      STATIC_DIR: /app/apps/frontend/dist
+      PROXY_PORT: ${PROXY_PORT:-8080}
+    depends_on:
+      - backend
+    ports:
+      - "${PROXY_PORT:-8080}:8080"
+    networks:
+      - ovo_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Cloudflare Tunnel (временный trycloudflare, URL в логах)
+  # ---------------------------------------------------------------------------
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: ovo_cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://proxy:8080
+    depends_on:
+      - proxy
+    networks:
+      - ovo_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  ovo_network:
+    driver: bridge

@@ -1,0 +1,26 @@
+{
+  "name": "openclaw-virtual-office",
+  "version": "1.0.0",
+  "description": "OpenClaw Virtual Office - Multi-agent platform with DDD architecture",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm --workspace=apps/backend run start:dev",
+    "dev:frontend": "npm --workspace=apps/frontend run dev",
+    "build": "npm --workspace=apps/backend run build && npm --workspace=apps/frontend run build",
+    "db:studio": "npx prisma studio --schema=apps/backend/prisma/schema.prisma",
+    "start:backend": "cd apps/backend && npm run start:dev",
+    "start:frontend": "cd apps/frontend && npm run dev",
+    "build:backend": "cd apps/backend && npm run build",
+    "prisma:migrate": "cd apps/backend && npx prisma migrate dev",
+    "prisma:generate": "cd apps/backend && npx prisma generate"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.3.3"
+  }
+}

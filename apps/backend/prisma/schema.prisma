@@ -1,0 +1,258 @@
+// This is your Prisma schema file for OpenClaw Virtual Office
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// USERS (Auth BC)
+// ==========================================
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  tenantId     String   @map("tenant_id")
+  role         String   @default("USER") // USER, ADMIN
+  version      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId])
+  @@index([email])
+  @@map("users")
+}
+
+// ==========================================
+// REFRESH TOKENS (Auth BC)
+// ==========================================
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+// ==========================================
+// AGENTS (Agent Lifecycle BC)
+// ==========================================
+model Agent {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  name         String
+  role         String   // WORKER, MANAGER, ARCHIVIST, FINANCIER, DIRECTOR
+  departmentId String?  @map("department_id")
+  status       String   @default("IDLE") // IDLE, BUSY, ERROR, AWAITING_INPUT
+  version      Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  presence     Presence?
+  messages     Message[]
+
+  @@index([tenantId])
+  @@index([departmentId])
+  @@index([status])
+  @@map("agents")
+}
+
+// ==========================================
+// FLOORS (Office Layout BC)
+// ==========================================
+model Floor {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  name       String
+  templateId String?  @map("template_id")
+  version    Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  zones Zone[]
+
+  @@index([tenantId])
+  @@map("floors")
+}
+
+// ==========================================
+// ZONES (Office Layout BC)
+// ==========================================
+model Zone {
+  id       String  @id @default(uuid())
+  floorId  String  @map("floor_id")
+  tenantId String  @map("tenant_id")
+  name     String
+  type     String  // WORK, REST, SMOKING, FINANCE, DIRECTOR, ARCHIVE
+  capacity Int     @default(10)
+  version  Int     @default(0)
+
+  floor         Floor          @relation(fields: [floorId], references: [id])
+  officeObjects OfficeObject[]
+  presence      Presence[]
+  chatRooms     ChatRoom[]
+
+  @@index([floorId])
+  @@index([tenantId])
+  @@map("zones")
+}
+
+// ==========================================
+// OFFICE OBJECTS (Office Layout BC)
+// ==========================================
+model OfficeObject {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  zoneId    String   @map("zone_id")
+  type      String   // DESK, SOFA, DOOR, ICON
+  agentId   String?  @map("agent_id")
+  x         Float    @default(0)
+  y         Float    @default(0)
+  metadata  Json?    // Additional metadata (dimensions, etc.)
+  version   Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  zone Zone @relation(fields: [zoneId], references: [id])
+
+  @@index([tenantId])
+  @@index([zoneId])
+  @@index([agentId])
+  @@map("office_objects")
+}
+
+// ==========================================
+// PRESENCE (Presence & Activity BC)
+// ==========================================
+model Presence {
+  id          String   @id @default(uuid())
+  agentId     String   @unique @map("agent_id")
+  tenantId    String   @map("tenant_id")
+  zoneId      String?  @map("zone_id")
+  state       String   @default("IDLE") // WORKING, RESTING, SMOKING, CHATTING, IDLE
+  version     Int      @default(0)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  agent Agent @relation(fields: [agentId], references: [id])
+  zone  Zone? @relation(fields: [zoneId], references: [id])
+
+  @@index([tenantId])
+  @@index([zoneId])
+  @@map("presence")
+}
+
+// ==========================================
+// MESSAGES (Communication BC)
+// ==========================================
+model Message {
+  id            String   @id @default(uuid())
+  tenantId      String   @map("tenant_id")
+  roomId        String   @map("room_id")
+  authorAgentId String   @map("author_agent_id")
+  text          String
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  author Agent    @relation(fields: [authorAgentId], references: [id])
+
+  @@index([tenantId])
+  @@index([roomId])
+  @@index([authorAgentId])
+  @@map("messages")
+}
+
+// ==========================================
+// CHAT ROOMS (Communication BC)
+// ==========================================
+model ChatRoom {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  name         String
+  zoneId       String?  @map("zone_id")
+  participants Json     @default("[]") // Array of { agentId, joinedAt }
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  zone     Zone?     @relation(fields: [zoneId], references: [id])
+  messages Message[]
+
+  @@index([tenantId])
+  @@index([zoneId])
+  @@map("chat_rooms")
+}
+
+// ==========================================
+// EVENTS (Audit & Replay BC)
+// ==========================================
+model Event {
+  id            BigInt   @id @default(autoincrement())
+  eventId       String   @unique @map("event_id") @default(uuid())
+  eventType     String   @map("event_type")
+  sourceBC      String   @map("source_bc")
+  aggregateId   String   @map("aggregate_id")
+  tenantId      String   @map("tenant_id")
+  payload       Json
+  correlationId String?  @map("correlation_id")
+  causationId   String?  @map("causation_id")
+  commandId     String?  @map("command_id")
+  version       Int      @default(1)
+  occurredAt    DateTime @default(now()) @map("occurred_at")
+
+  @@index([tenantId])
+  @@index([aggregateId])
+  @@index([eventType])
+  @@index([correlationId])
+  @@index([commandId])
+  @@index([occurredAt])
+  @@map("events")
+}
+
+// ==========================================
+// OUTBOX (Outbox Pattern - cross-cutting)
+// ==========================================
+model Outbox {
+  id          String    @id @default(uuid())
+  eventId     String    @unique @map("event_id")
+  eventType   String    @map("event_type")
+  aggregateId String    @map("aggregate_id")
+  tenantId    String    @map("tenant_id")
+  payload     Json
+  processed   Boolean   @default(false)
+  processedAt DateTime? @map("processed_at")
+  retries     Int       @default(0)
+  error       String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([processed])
+  @@index([tenantId])
+  @@index([createdAt])
+  @@map("outbox")
+}
+
+// ==========================================
+// INBOX (Deduplication - cross-cutting)
+// ==========================================
+model Inbox {
+  id          String   @id @default(uuid())
+  eventId     String   @unique @map("event_id")
+  eventType   String   @map("event_type")
+  processedAt DateTime @default(now()) @map("processed_at")
+
+  @@index([eventId])
+  @@map("inbox")
+}

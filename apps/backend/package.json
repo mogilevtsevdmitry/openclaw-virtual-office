@@ -1,0 +1,52 @@
+{
+  "name": "@openclaw/backend",
+  "version": "1.0.0",
+  "description": "OpenClaw Virtual Office Backend (NestJS DDD)",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/apps/backend/src/main",
+    "start:dev": "nest start --watch --entryFile apps/backend/src/main",
+    "start:prod": "node dist/apps/backend/src/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/cqrs": "^10.0.0",
+    "@nestjs/event-emitter": "^2.0.0",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^10.4.22",
+    "@nestjs/platform-socket.io": "^10.0.0",
+    "@nestjs/schedule": "^6.1.1",
+    "@nestjs/websockets": "^10.0.0",
+    "@prisma/client": "^5.22.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "nest-winston": "^1.9.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.0",
+    "uuid": "^9.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.0.0",
+    "@nestjs/schematics": "^10.0.0",
+    "@nestjs/testing": "^10.0.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.3.1",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/uuid": "^9.0.0",
+    "prisma": "^5.22.0",
+    "socket.io-client": "^4.8.3",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.3.3"
+  }
+}
