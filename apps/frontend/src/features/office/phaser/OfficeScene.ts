@@ -69,9 +69,9 @@ const ZONES: ZoneDef[] = [
 const DESKS: { x: number; y: number; agentKey: string }[] = [
   { x: 120, y: 130, agentKey: 'DIRECTOR' },
   { x: 270, y: 130, agentKey: 'FINANCIER' },
-  { x: 420, y: 130, agentKey: 'MANAGER' },
-  { x: 570, y: 130, agentKey: 'ARCHIVIST' },
-  { x: 720, y: 130, agentKey: 'WORKER' },
+  { x: 420, y: 130, agentKey: 'BACKEND' },
+  { x: 570, y: 130, agentKey: 'DEVOPS' },
+  { x: 720, y: 130, agentKey: 'FRONTEND' },
   { x: 120, y: 280, agentKey: '' },
   { x: 270, y: 280, agentKey: '' },
   { x: 420, y: 280, agentKey: '' },
@@ -80,9 +80,45 @@ const DESKS: { x: number; y: number; agentKey: string }[] = [
 const ROLE_DESK: Record<string, { x: number; y: number }> = {
   DIRECTOR:  { x: 120, y: 145 },
   FINANCIER: { x: 270, y: 145 },
-  MANAGER:   { x: 420, y: 145 },
-  ARCHIVIST: { x: 570, y: 145 },
-  WORKER:    { x: 720, y: 145 },
+  BACKEND:   { x: 420, y: 145 },
+  DEVOPS:    { x: 570, y: 145 },
+  FRONTEND:  { x: 720, y: 145 },
+  // Архитектор — рядом с BACKEND, второй ряд
+  ARCHITECT: { x: 420, y: 280 },
+}
+
+// Пул свободных столов в общей рабочей зоне — для агентов без выделенного места
+const SHARED_DESK_POOL: { x: number; y: number }[] = [
+  { x: 120, y: 280 },
+  { x: 270, y: 280 },
+  { x: 570, y: 280 },
+  { x: 720, y: 280 },
+  { x: 120, y: 380 },
+  { x: 270, y: 380 },
+  { x: 420, y: 380 },
+  { x: 570, y: 380 },
+  { x: 720, y: 380 },
+]
+
+const usedSharedDesks = new Set<string>()
+const agentDeskAssignments = new Map<string, { x: number; y: number }>()
+
+function getDeskPosition(agentId: string, role: string): { x: number; y: number } {
+  const known = ROLE_DESK[role]
+  if (known) return known
+
+  const assigned = agentDeskAssignments.get(agentId)
+  if (assigned) return assigned
+
+  const next = SHARED_DESK_POOL.find((d) => !usedSharedDesks.has(`${d.x},${d.y}`))
+  if (next) {
+    usedSharedDesks.add(`${next.x},${next.y}`)
+    agentDeskAssignments.set(agentId, next)
+    return next
+  }
+
+  // Крайний случай — центр рабочей зоны
+  return { x: 470, y: 250 }
 }
 
 // Wander spots per zone
@@ -101,6 +137,9 @@ const ZONE_SPOTS: Record<string, { x: number; y: number }[]> = {
   ],
   lounge: [
     { x: 1100, y: 620 }, { x: 1200, y: 660 }, { x: 1350, y: 630 }, { x: 1500, y: 650 }, { x: 1600, y: 700 },
+  ],
+  work: [
+    { x: 200, y: 200 }, { x: 350, y: 250 }, { x: 500, y: 200 }, { x: 650, y: 250 }, { x: 750, y: 300 },
   ],
 }
 
@@ -148,8 +187,8 @@ const AVATAR_DEFS: AvatarDef[] = [
     extra: 'folder',
   },
   {
-    key: 'MANAGER',
-    role: 'MANAGER',
+    key: 'BACKEND',
+    role: 'BACKEND',
     skinColor: 0xf5d5a8,
     hairColor: 0x2c1810,
     bodyColor: 0x4a6fa5,
@@ -161,8 +200,8 @@ const AVATAR_DEFS: AvatarDef[] = [
     extra: 'none',
   },
   {
-    key: 'ARCHIVIST',
-    role: 'ARCHIVIST',
+    key: 'DEVOPS',
+    role: 'DEVOPS',
     skinColor: 0xead5b3,
     hairColor: 0x4a3728,
     bodyColor: 0x8b4513,
@@ -174,8 +213,8 @@ const AVATAR_DEFS: AvatarDef[] = [
     extra: 'none',
   },
   {
-    key: 'WORKER',
-    role: 'WORKER',
+    key: 'FRONTEND',
+    role: 'FRONTEND',
     skinColor: 0xf0c27f,
     hairColor: 0x1a1a1a,
     bodyColor: 0xe74c3c,
@@ -211,7 +250,9 @@ interface AgentState {
   currentY: number
   deskX: number
   deskY: number
+  deskPosition: { x: number; y: number }
   facingRight: boolean
+  workingPulseRing: Phaser.GameObjects.Arc | null
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
@@ -323,7 +364,6 @@ export class OfficeScene extends Phaser.Scene {
 
       // ── HAIR ──
       g.fillStyle(def.hairColor, 1)
-      // Female styles: fuller hair
       if (def.key === 'DIRECTOR') {
         // Bob / kare
         g.fillRect(headCX - headR, headCY - headR, headR * 2, 6)
@@ -332,23 +372,23 @@ export class OfficeScene extends Phaser.Scene {
       } else if (def.key === 'FINANCIER') {
         // Ponytail
         g.fillRect(headCX - headR, headCY - headR, headR * 2, 5)
-        g.fillRect(headCX + 4, headCY - 6, 3, 12) // tail
-      } else if (def.key === 'MANAGER') {
+        g.fillRect(headCX + 4, headCY - 6, 3, 12)
+      } else if (def.key === 'BACKEND') {
         // Short hair
         g.fillRect(headCX - headR, headCY - headR, headR * 2, 4)
-      } else if (def.key === 'ARCHIVIST') {
+      } else if (def.key === 'DEVOPS') {
         // Medium hair + beard
         g.fillRect(headCX - headR, headCY - headR, headR * 2, 4)
-        g.fillRect(headCX - 4, headCY + 4, 8, 4) // beard
-      } else if (def.key === 'WORKER') {
+        g.fillRect(headCX - 4, headCY + 4, 8, 4)
+      } else if (def.key === 'FRONTEND') {
         // Short under cap
         g.fillRect(headCX - headR, headCY - headR, headR * 2, 3)
       }
 
       // ── FACE: eyes ──
       g.fillStyle(0x1a1a1a, 1)
-      g.fillRect(headCX - 4, headCY, 2, 2)  // left eye
-      g.fillRect(headCX + 2, headCY, 2, 2)  // right eye
+      g.fillRect(headCX - 4, headCY, 2, 2)
+      g.fillRect(headCX + 2, headCY, 2, 2)
 
       // ── FACE: smile ──
       g.fillStyle(0xcc8866, 1)
@@ -365,7 +405,7 @@ export class OfficeScene extends Phaser.Scene {
       } else if (def.accessory === 'cap') {
         g.fillStyle(def.accessoryColor, 1)
         g.fillRect(headCX - headR, headCY - headR, headR * 2, 5)
-        g.fillRect(headCX - headR - 2, headCY - headR + 4, headR * 2 + 4, 2) // brim
+        g.fillRect(headCX - headR - 2, headCY - headR + 4, headR * 2 + 4, 2)
       } else if (def.accessory === 'beret') {
         g.fillStyle(def.accessoryColor, 1)
         g.fillCircle(headCX, headCY - headR + 3, headR)
@@ -382,7 +422,6 @@ export class OfficeScene extends Phaser.Scene {
         g.beginPath()
         g.arc(headCX, headCY - 2, headR + 1, Math.PI, 0, false)
         g.strokePath()
-        // headphones around neck
         g.fillStyle(def.accessoryColor, 1)
         g.fillRect(headCX - 4, 17, 8, 2)
       }
@@ -397,12 +436,10 @@ export class OfficeScene extends Phaser.Scene {
   // ── Create ─────────────────────────────────────────────────────────────────
 
   create() {
-    // Generate avatar textures first (must be in create, not preload)
     for (const def of AVATAR_DEFS) {
       this.generateAvatarTexture(def)
     }
 
-    // World bounds
     this.physics.world.setBounds(0, 0, WORLD_W, WORLD_H)
     this.cameras.main.setBounds(0, 0, WORLD_W, WORLD_H)
     this.cameras.main.setBackgroundColor(0x0f0f1a)
@@ -416,35 +453,27 @@ export class OfficeScene extends Phaser.Scene {
   // ── World drawing ──────────────────────────────────────────────────────────
 
   private drawWorld() {
-    // Background
     const bg = this.add.graphics()
     bg.fillStyle(0x0f0f1a, 1)
     bg.fillRect(0, 0, WORLD_W, WORLD_H)
 
-    // Office outer walls (thick border)
     bg.lineStyle(6, 0x4a4a6e, 1)
     bg.strokeRect(30, 30, WORLD_W - 60, WORLD_H - 60)
-    // Inner wall fill (wall color)
     bg.fillStyle(0x1a1a2e, 1)
     bg.fillRect(30, 30, WORLD_W - 60, WORLD_H - 60)
 
-    // Floor zones
     for (const zone of ZONES) {
       this.drawZoneFloor(zone)
     }
 
-    // Decor elements
     this.drawWorkZoneDecor()
     this.drawMeetingDecor()
     this.drawChatDecor()
     this.drawRestDecor()
     this.drawSmokingDecor()
     this.drawLoungeDecor()
-
-    // Perimeter decor (plants, posters, lamps)
     this.drawPerimeterDecor()
 
-    // Zone labels
     for (const zone of ZONES) {
       this.add.text(zone.x + 8, zone.y + 6, zone.label, {
         fontSize: '11px',
@@ -461,8 +490,6 @@ export class OfficeScene extends Phaser.Scene {
 
     const tileSize = 32
 
-    // Clip to zone
-    // Draw checkerboard tiles
     for (let ty = 0; ty < zone.h; ty += tileSize) {
       for (let tx = 0; tx < zone.w; tx += tileSize) {
         const col = Math.floor(tx / tileSize)
@@ -475,7 +502,6 @@ export class OfficeScene extends Phaser.Scene {
       }
     }
 
-    // Subtle tile grout lines
     g.lineStyle(1, 0x0a0a14, 0.5)
     for (let ty = 0; ty <= zone.h; ty += tileSize) {
       g.moveTo(zone.x, zone.y + ty)
@@ -487,7 +513,6 @@ export class OfficeScene extends Phaser.Scene {
     }
     g.strokePath()
 
-    // Zone border accent
     g.lineStyle(2, zone.accentColor, 0.3)
     g.strokeRect(zone.x, zone.y, zone.w, zone.h)
   }
@@ -496,40 +521,32 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // 5 desks with monitors
     for (const desk of DESKS.slice(0, 5)) {
-      // Desk surface
       g.fillStyle(0x3a3a5a, 1)
       g.fillRoundedRect(desk.x - 40, desk.y - 20, 80, 40, 4)
       g.lineStyle(1, 0x5a5a8a, 0.8)
       g.strokeRoundedRect(desk.x - 40, desk.y - 20, 80, 40, 4)
 
-      // Monitor stand
       g.fillStyle(0x1a1a2e, 1)
       g.fillRect(desk.x - 3, desk.y - 22, 6, 4)
 
-      // Monitor screen
       g.fillStyle(0x111122, 1)
       g.fillRoundedRect(desk.x - 22, desk.y - 38, 44, 26, 3)
       g.lineStyle(2, 0x4a4a7a, 1)
       g.strokeRoundedRect(desk.x - 22, desk.y - 38, 44, 26, 3)
 
-      // Screen glow (randomize per desk for variety)
       const glowColors = [0x89b4fa, 0xa6e3a1, 0xcba6f7, 0xf9e2af, 0x89dceb]
       const idx = DESKS.indexOf(desk)
       g.fillStyle(glowColors[idx % glowColors.length], 0.3)
       g.fillRect(desk.x - 20, desk.y - 36, 40, 22)
 
-      // Keyboard
       g.fillStyle(0x2a2a4a, 1)
       g.fillRoundedRect(desk.x - 18, desk.y - 6, 36, 10, 2)
 
-      // Mouse
       g.fillStyle(0x3a3a5a, 1)
       g.fillEllipse(desk.x + 22, desk.y - 3, 8, 12)
     }
 
-    // Additional desks (bottom row) - empty
     for (const desk of DESKS.slice(5)) {
       g.fillStyle(0x3a3a5a, 0.7)
       g.fillRoundedRect(desk.x - 40, desk.y - 20, 80, 40, 4)
@@ -537,7 +554,27 @@ export class OfficeScene extends Phaser.Scene {
       g.strokeRoundedRect(desk.x - 40, desk.y - 20, 80, 40, 4)
     }
 
-    // Rug under work area
+    // ARCHITECT desk — рядом с BACKEND (x=420, y=280)
+    const architectDesk = ROLE_DESK['ARCHITECT']
+    g.fillStyle(0x3a3a5a, 0.9)
+    g.fillRoundedRect(architectDesk.x - 40, architectDesk.y - 20, 80, 40, 4)
+    g.lineStyle(1, 0xcba6f7, 0.7)
+    g.strokeRoundedRect(architectDesk.x - 40, architectDesk.y - 20, 80, 40, 4)
+    g.fillStyle(0x111122, 1)
+    g.fillRoundedRect(architectDesk.x - 22, architectDesk.y - 38, 44, 26, 3)
+    g.lineStyle(2, 0xcba6f7, 0.8)
+    g.strokeRoundedRect(architectDesk.x - 22, architectDesk.y - 38, 44, 26, 3)
+    g.fillStyle(0xcba6f7, 0.25)
+    g.fillRect(architectDesk.x - 20, architectDesk.y - 36, 40, 22)
+
+    // Общие столы (shared pool) — лёгкая отметка цветом 0x334455
+    for (const pos of SHARED_DESK_POOL) {
+      g.fillStyle(0x334455, 1)
+      g.fillRoundedRect(pos.x - 40, pos.y - 20, 80, 40, 4)
+      g.lineStyle(1, 0x445566, 0.6)
+      g.strokeRoundedRect(pos.x - 40, pos.y - 20, 80, 40, 4)
+    }
+
     g.fillStyle(0x1e2040, 0.4)
     g.fillRoundedRect(80, 95, 800, 340, 8)
   }
@@ -546,17 +583,14 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // Oval conference table
     g.fillStyle(0x4a3a2a, 1)
     g.fillEllipse(1120, 250, 280, 140)
     g.lineStyle(3, 0xcba6f7, 0.6)
     g.strokeEllipse(1120, 250, 280, 140)
 
-    // Table surface sheen
     g.fillStyle(0x5a4a3a, 0.5)
     g.fillEllipse(1110, 240, 240, 110)
 
-    // Chairs around table
     const chairPositions = [
       { x: 990, y: 250 }, { x: 1250, y: 250 },
       { x: 1020, y: 185 }, { x: 1120, y: 170 }, { x: 1220, y: 185 },
@@ -569,19 +603,16 @@ export class OfficeScene extends Phaser.Scene {
       g.strokeEllipse(cp.x, cp.y, 26, 22)
     }
 
-    // Whiteboard on north wall
     g.fillStyle(0xe8e8f0, 1)
     g.fillRoundedRect(950, 68, 340, 65, 4)
     g.lineStyle(2, 0xcba6f7, 0.8)
     g.strokeRoundedRect(950, 68, 340, 65, 4)
-    // Whiteboard content (lines)
     g.lineStyle(1, 0xcba6f7, 0.5)
     for (let i = 0; i < 3; i++) {
       g.moveTo(960, 82 + i * 14)
       g.lineTo(1050 + Math.random() * 100, 82 + i * 14)
     }
     g.strokePath()
-    // Chart on whiteboard
     g.fillStyle(0x89b4fa, 0.7)
     g.fillRect(1150, 75, 20, 30)
     g.fillStyle(0xa6e3a1, 0.7)
@@ -593,7 +624,6 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(0xf38ba8, 0.7)
     g.fillRect(1250, 79, 20, 26)
 
-    // Projector screen
     g.fillStyle(0x1a1a1a, 0.9)
     g.fillRect(1275, 115, 20, 16)
     g.fillStyle(0xcba6f7, 0.3)
@@ -604,23 +634,19 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // Water cooler
     g.fillStyle(0x4a6fa5, 1)
     g.fillRoundedRect(1660, 90, 30, 55, 4)
     g.fillStyle(0x89dceb, 0.8)
     g.fillRoundedRect(1663, 93, 24, 35, 3)
     g.fillStyle(0x3a5f95, 1)
     g.fillRect(1668, 128, 14, 8)
-    // Water cooler spout
     g.fillStyle(0x2a4f85, 1)
     g.fillRect(1673, 130, 4, 5)
 
-    // High stools / bar table
     g.fillStyle(0x3a3a5a, 1)
     g.fillRoundedRect(1380, 90, 200, 60, 6)
     g.lineStyle(1, 0x89dceb, 0.4)
     g.strokeRoundedRect(1380, 90, 200, 60, 6)
-    // Stools
     for (let i = 0; i < 4; i++) {
       g.fillStyle(0x2a2a4a, 1)
       g.fillEllipse(1400 + i * 50, 160, 24, 18)
@@ -628,7 +654,6 @@ export class OfficeScene extends Phaser.Scene {
       g.fillRect(1397 + i * 50, 140, 6, 20)
     }
 
-    // Sofas / bean bags
     g.fillStyle(0x2a4a5a, 1)
     g.fillRoundedRect(1380, 250, 100, 50, 8)
     g.fillRoundedRect(1500, 250, 100, 50, 8)
@@ -636,10 +661,8 @@ export class OfficeScene extends Phaser.Scene {
     g.strokeRoundedRect(1380, 250, 100, 50, 8)
     g.strokeRoundedRect(1500, 250, 100, 50, 8)
 
-    // Coffee table between sofas
     g.fillStyle(0x3a2a1a, 1)
     g.fillRoundedRect(1430, 280, 60, 25, 4)
-    // Coffee cups
     g.fillStyle(0xfab387, 0.8)
     g.fillCircle(1445, 292, 5)
     g.fillCircle(1460, 288, 5)
@@ -650,49 +673,42 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // Big sofa L-shape
     g.fillStyle(0x2a4a3a, 1)
-    g.fillRoundedRect(80, 540, 200, 70, 8)  // main
-    g.fillRoundedRect(80, 540, 60, 120, 8)  // side
+    g.fillRoundedRect(80, 540, 200, 70, 8)
+    g.fillRoundedRect(80, 540, 60, 120, 8)
     g.lineStyle(1, 0xa6e3a1, 0.4)
     g.strokeRoundedRect(80, 540, 200, 70, 8)
     g.strokeRoundedRect(80, 540, 60, 120, 8)
 
-    // TV / console screen
     g.fillStyle(0x111122, 1)
     g.fillRoundedRect(320, 525, 220, 120, 6)
     g.lineStyle(2, 0xa6e3a1, 0.6)
     g.strokeRoundedRect(320, 525, 220, 120, 6)
-    // Screen content (game)
     g.fillStyle(0x0a0a1a, 1)
     g.fillRect(325, 530, 210, 110)
     g.fillStyle(0xa6e3a1, 0.8)
-    g.fillRect(390, 545, 10, 70)  // left paddle
-    g.fillRect(540, 545, 10, 70)  // right paddle
+    g.fillRect(390, 545, 10, 70)
+    g.fillRect(540, 545, 10, 70)
     g.fillStyle(0xffffff, 0.9)
-    g.fillRect(460, 585, 12, 12)  // ball (pong)
+    g.fillRect(460, 585, 12, 12)
 
-    // TV stand
     g.fillStyle(0x2a2a4a, 1)
     g.fillRect(400, 645, 60, 12)
     g.fillRect(420, 657, 20, 8)
 
-    // Gaming chair
     g.fillStyle(0x1a3a2a, 1)
     g.fillRoundedRect(200, 575, 80, 65, 6)
     g.lineStyle(1, 0xa6e3a1, 0.3)
     g.strokeRoundedRect(200, 575, 80, 65, 6)
 
-    // Hookah / кальян
     g.fillStyle(0x4a3a2a, 1)
-    g.fillRect(525, 640, 14, 80)   // tube
+    g.fillRect(525, 640, 14, 80)
     g.fillStyle(0x8B4513, 1)
-    g.fillEllipse(532, 700, 50, 30) // base
+    g.fillEllipse(532, 700, 50, 30)
     g.fillStyle(0x2a1a0a, 1)
-    g.fillEllipse(532, 640, 30, 20) // bowl
+    g.fillEllipse(532, 640, 30, 20)
     g.fillStyle(0x89dceb, 0.5)
     g.fillEllipse(532, 650, 22, 14)
-    // hose (simplified - no bezier, use line segments)
     g.lineStyle(3, 0x4a3a2a, 1)
     g.moveTo(525, 680)
     g.lineTo(500, 700)
@@ -700,7 +716,6 @@ export class OfficeScene extends Phaser.Scene {
     g.lineTo(490, 730)
     g.strokePath()
 
-    // Rug
     g.fillStyle(0x1a3a2a, 0.4)
     g.fillEllipse(260, 640, 350, 200)
     g.lineStyle(2, 0xa6e3a1, 0.2)
@@ -711,7 +726,6 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // Ashtray stand
     g.fillStyle(0x3a3a3a, 1)
     g.fillRect(776, 590, 8, 60)
     g.fillStyle(0x5a5a5a, 1)
@@ -719,22 +733,18 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(0x2a2a2a, 1)
     g.fillEllipse(780, 650, 36, 14)
 
-    // Small outdoor bench (dark metal)
     g.fillStyle(0x2a2a2a, 1)
     g.fillRoundedRect(650, 640, 120, 30, 4)
     g.lineStyle(1, 0x4a4a4a, 0.8)
     g.strokeRoundedRect(650, 640, 120, 30, 4)
-    // Bench legs
     g.lineStyle(3, 0x2a2a2a, 1)
     g.moveTo(660, 670); g.lineTo(655, 700)
     g.moveTo(760, 670); g.lineTo(755, 700)
     g.strokePath()
 
-    // Second bench
     g.fillStyle(0x2a2a2a, 1)
     g.fillRoundedRect(820, 640, 100, 30, 4)
 
-    // "No Smoking" sign (ironic)
     g.fillStyle(0x3a3a3a, 1)
     g.fillRoundedRect(875, 510, 60, 36, 4)
     g.fillStyle(0xf38ba8, 0.8)
@@ -743,7 +753,6 @@ export class OfficeScene extends Phaser.Scene {
     g.moveTo(895, 518); g.lineTo(915, 538)
     g.strokePath()
 
-    // Dark rug
     g.fillStyle(0x1a1a1a, 0.5)
     g.fillRect(650, 515, 280, 310)
     g.lineStyle(1, 0x3a3a3a, 0.5)
@@ -754,13 +763,11 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // Long dining table
     g.fillStyle(0x4a3a1a, 1)
     g.fillRoundedRect(1020, 545, 520, 80, 6)
     g.lineStyle(2, 0xfab387, 0.5)
     g.strokeRoundedRect(1020, 545, 520, 80, 6)
 
-    // Chairs around dining table
     const diningChairs = [
       { x: 1040, y: 540 }, { x: 1110, y: 540 }, { x: 1180, y: 540 },
       { x: 1250, y: 540 }, { x: 1320, y: 540 }, { x: 1390, y: 540 },
@@ -774,7 +781,6 @@ export class OfficeScene extends Phaser.Scene {
       g.strokeRoundedRect(c.x - 15, c.y - 8, 30, 22, 3)
     }
 
-    // Dishes on table
     for (let i = 0; i < 5; i++) {
       g.fillStyle(0xe8e8e0, 0.9)
       g.fillEllipse(1060 + i * 90, 585, 30, 22)
@@ -782,7 +788,6 @@ export class OfficeScene extends Phaser.Scene {
       g.fillEllipse(1060 + i * 90, 585, 20, 14)
     }
 
-    // Kitchen counter / bar
     g.fillStyle(0x3a2a1a, 1)
     g.fillRoundedRect(1010, 700, 720, 50, 5)
     g.fillStyle(0x5a4a2a, 1)
@@ -790,20 +795,16 @@ export class OfficeScene extends Phaser.Scene {
     g.lineStyle(1, 0xfab387, 0.4)
     g.strokeRoundedRect(1010, 700, 720, 50, 5)
 
-    // Appliances on counter
-    // Coffee maker
     g.fillStyle(0x1a1a1a, 1)
     g.fillRoundedRect(1020, 680, 35, 25, 3)
     g.fillStyle(0xfab387, 0.5)
     g.fillRect(1025, 684, 8, 10)
 
-    // Microwave
     g.fillStyle(0x2a2a2a, 1)
     g.fillRoundedRect(1070, 680, 50, 25, 3)
     g.fillStyle(0x111111, 0.8)
     g.fillRect(1074, 684, 30, 17)
 
-    // Fridge
     g.fillStyle(0x3a3a5a, 1)
     g.fillRoundedRect(1680, 510, 60, 110, 4)
     g.lineStyle(1, 0xfab387, 0.4)
@@ -811,7 +812,6 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(0x2a2a4a, 1)
     g.fillRect(1684, 514, 52, 50)
     g.fillRect(1684, 568, 52, 48)
-    // Fridge handle
     g.lineStyle(2, 0xfab387, 0.8)
     g.moveTo(1726, 535); g.lineTo(1726, 545)
     g.moveTo(1726, 575); g.lineTo(1726, 585)
@@ -822,7 +822,6 @@ export class OfficeScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(1)
 
-    // Plants (big leaf)
     const plantPositions = [
       { x: 35, y: 50 }, { x: 1760, y: 50 }, { x: 35, y: 850 }, { x: 1760, y: 850 },
       { x: 900, y: 38 }, { x: 900, y: 862 }, { x: 38, y: 450 }, { x: 1762, y: 450 },
@@ -831,36 +830,29 @@ export class OfficeScene extends Phaser.Scene {
       this.drawPlant(g, pp.x, pp.y)
     }
 
-    // Wall lamps (top edge)
     const lampPositions = [200, 500, 800, 1100, 1400, 1650]
     for (const lx of lampPositions) {
       this.drawLamp(g, lx, 38)
     }
-    // Bottom lamps
     for (const lx of [300, 700, 1100, 1500]) {
       this.drawLamp(g, lx, 862)
     }
 
-    // Posters / artwork on walls
-    this.drawPoster(g, 120, 35, 0x89b4fa, '//') // top wall poster
+    this.drawPoster(g, 120, 35, 0x89b4fa, '//')
     this.drawPoster(g, 450, 35, 0xa6e3a1, '><')
     this.drawPoster(g, 1200, 35, 0xcba6f7, '{  }')
     this.drawPoster(g, 1500, 35, 0xf9e2af, '...')
-    // Left wall poster
     this.drawPoster(g, 35, 300, 0xf38ba8, '◆')
     this.drawPoster(g, 35, 600, 0x89dceb, '▲')
-    // Right wall poster
     this.drawPoster(g, 1762, 300, 0xfab387, '★')
     this.drawPoster(g, 1762, 600, 0xa6e3a1, '♦')
   }
 
   private drawPlant(g: Phaser.GameObjects.Graphics, x: number, y: number) {
-    // Pot
     g.fillStyle(0x8b4513, 1)
     g.fillRect(x - 8, y + 10, 16, 12)
     g.fillStyle(0x6b3410, 1)
     g.fillRect(x - 9, y + 8, 18, 4)
-    // Leaves
     g.fillStyle(0x2d7a3a, 1)
     g.fillCircle(x, y, 10)
     g.fillCircle(x - 8, y + 4, 7)
@@ -870,14 +862,11 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   private drawLamp(g: Phaser.GameObjects.Graphics, x: number, y: number) {
-    // Wall bracket
     g.fillStyle(0x4a4a6a, 1)
     g.fillRect(x - 2, y, 4, 16)
     g.fillRect(x - 8, y + 14, 16, 3)
-    // Shade
     g.fillStyle(0xf9e2af, 0.8)
     g.fillTriangle(x - 10, y + 17, x + 10, y + 17, x, y + 30)
-    // Glow dot
     g.fillStyle(0xffffff, 0.4)
     g.fillCircle(x, y + 20, 4)
   }
@@ -890,7 +879,6 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(color, 0.4)
     g.fillRect(x - 14, y - 20, 28, 36)
 
-    // Add text label on poster
     this.add.text(x, y, text, {
       fontSize: '8px',
       color: '#' + color.toString(16).padStart(6, '0'),
@@ -905,7 +893,6 @@ export class OfficeScene extends Phaser.Scene {
     const cam = this.cameras.main
     cam.setZoom(1)
 
-    // Drag to pan
     this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
       if (pointer.isDown) {
         cam.scrollX -= (pointer.x - pointer.prevPosition.x) / cam.zoom
@@ -913,13 +900,11 @@ export class OfficeScene extends Phaser.Scene {
       }
     })
 
-    // Scroll to zoom
     this.input.on('wheel', (_pointer: Phaser.Input.Pointer, _gameObjects: unknown, _deltaX: number, deltaY: number) => {
       const newZoom = Phaser.Math.Clamp(cam.zoom - deltaY * 0.001, 0.4, 1.8)
       cam.setZoom(newZoom)
     })
 
-    // Start camera centered on work zone
     cam.centerOn(WORLD_W / 2, WORLD_H / 2)
   }
 
@@ -972,7 +957,6 @@ export class OfficeScene extends Phaser.Scene {
       }
     })
 
-    // Signal to React layer that scene is ready for sync
     this.time.delayedCall(100, () => {
       eventBridge.emit('scene:ready' as never, undefined as never)
     })
@@ -986,15 +970,16 @@ export class OfficeScene extends Phaser.Scene {
       return
     }
 
-    const desk = ROLE_DESK[agent.role] ?? { x: 420, y: 145 }
+    const desk = getDeskPosition(agent.agentId, agent.role)
+    const deskPosition = { x: desk.x, y: desk.y }
+
     const avatarKey = `avatar_${agent.role}_0`
-    const textureKey = this.textures.exists(avatarKey) ? avatarKey : `avatar_WORKER_0`
+    const textureKey = this.textures.exists(avatarKey) ? avatarKey : `avatar_FRONTEND_0`
 
     const sprite = this.add.sprite(0, 0, textureKey)
     sprite.setScale(2)
     sprite.setDepth(10)
 
-    // Name label
     const cleanName = agent.name.replace(/^\p{Emoji}\s*/u, '')
     const nameLabel = this.add.text(0, 36, cleanName, {
       fontSize: '9px',
@@ -1026,12 +1011,13 @@ export class OfficeScene extends Phaser.Scene {
       currentY: desk.y,
       deskX: desk.x,
       deskY: desk.y,
+      deskPosition,
       facingRight: true,
+      workingPulseRing: null,
     }
 
     this.agents.set(agent.agentId, state)
 
-    // Entrance pop
     container.setAlpha(0)
     container.setScale(0.5)
     this.tweens.add({
@@ -1050,18 +1036,47 @@ export class OfficeScene extends Phaser.Scene {
 
   // ── Behaviour: WORKING ────────────────────────────────────────────────────
 
-  private startWorkingBehaviour(agentId: string) {
+  private goToDesk(agentId: string) {
+    const state = this.agents.get(agentId)
+    if (!state) return
+
+    // Stop wandering immediately
+    if (state.wanderTimer) {
+      state.wanderTimer.destroy()
+      state.wanderTimer = null
+    }
+
+    state.behaviour = 'WALKING'
+    this.startWalkAnimation(agentId)
+
+    const { x, y } = state.deskPosition
+
+    this.moveTo(state, x, y, 1200, () => {
+      const s = this.agents.get(agentId)
+      if (!s || s.presenceState !== 'WORKING') return
+      this.stopWalking(s)
+      this.startWorkingAnimation(agentId)
+    })
+  }
+
+  private startWorkingAnimation(agentId: string) {
     const state = this.agents.get(agentId)
     if (!state) return
 
     state.behaviour = 'PULSING'
-    this.stopWalking(state)
-    this.moveTo(state, state.deskX, state.deskY, 600)
+
+    // Remove old pulse ring if exists
+    if (state.workingPulseRing) {
+      this.tweens.killTweensOf(state.workingPulseRing)
+      state.workingPulseRing.destroy()
+      state.workingPulseRing = null
+    }
 
     // Blue pulse ring
     const pulseRing = this.add.arc(0, 0, 24, 0, 360, false, 0x89b4fa, 0.15)
     pulseRing.setDepth(9)
     state.container.add(pulseRing)
+    state.workingPulseRing = pulseRing
 
     this.tweens.add({
       targets: pulseRing,
@@ -1071,8 +1086,34 @@ export class OfficeScene extends Phaser.Scene {
       onRepeat: () => { pulseRing.setScale(1); pulseRing.setAlpha(0.15) },
     })
 
-    // Random work emoji every 15-30s
+    // Show work emoji immediately
+    this.showHeadEmoji(agentId, '💻')
+
+    // Schedule periodic work emojis
     this.scheduleWorkEmoji(agentId)
+  }
+
+  private stopWorkingAnimation(state: AgentState) {
+    if (state.workingPulseRing) {
+      this.tweens.killTweensOf(state.workingPulseRing)
+      state.workingPulseRing.destroy()
+      state.workingPulseRing = null
+    }
+    if (state.emojiTimer) {
+      state.emojiTimer.destroy()
+      state.emojiTimer = null
+    }
+  }
+
+  private startWorkingBehaviour(agentId: string) {
+    const state = this.agents.get(agentId)
+    if (!state) return
+
+    // Stop any current pulse animation (in case re-triggered)
+    this.stopWorkingAnimation(state)
+
+    // Go to desk, then start working animation on arrival
+    this.goToDesk(agentId)
   }
 
   private scheduleWorkEmoji(agentId: string) {
@@ -1094,23 +1135,38 @@ export class OfficeScene extends Phaser.Scene {
     const state = this.agents.get(agentId)
     if (!state) return
 
-    // Sit at desk first
-    state.behaviour = 'AT_DESK'
-    this.moveTo(state, state.deskX, state.deskY, 600)
+    // Stop working animation if active
+    this.stopWorkingAnimation(state)
 
-    const scheduleWander = () => {
+    // Wait 2-3 seconds, then start wandering
+    const idleDelay = Phaser.Math.Between(2000, 3000)
+    state.wanderTimer = this.time.delayedCall(idleDelay, () => {
       const s = this.agents.get(agentId)
       if (!s || s.presenceState === 'WORKING') return
 
-      const delay = Phaser.Math.Between(30000, 120000)
-      s.wanderTimer = this.time.delayedCall(delay, () => {
+      // First go back to desk
+      s.behaviour = 'WALKING'
+      this.startWalkAnimation(agentId)
+      this.moveTo(s, s.deskPosition.x, s.deskPosition.y, 800, () => {
         const ss = this.agents.get(agentId)
-        if (!ss || ss.presenceState === 'WORKING') return
-        this.doWander(agentId, scheduleWander)
+        if (!ss) return
+        this.stopWalking(ss)
+        ss.behaviour = 'AT_DESK'
+        this.scheduleWander(agentId)
       })
-    }
+    })
+  }
 
-    scheduleWander()
+  private scheduleWander(agentId: string) {
+    const state = this.agents.get(agentId)
+    if (!state) return
+
+    const delay = Phaser.Math.Between(30000, 120000)
+    state.wanderTimer = this.time.delayedCall(delay, () => {
+      const s = this.agents.get(agentId)
+      if (!s || s.presenceState === 'WORKING') return
+      this.doWander(agentId, () => this.scheduleWander(agentId))
+    })
   }
 
   private doWander(agentId: string, onDone: () => void) {
@@ -1132,22 +1188,19 @@ export class OfficeScene extends Phaser.Scene {
       this.stopWalking(s)
       s.behaviour = 'WANDERING'
 
-      // Maybe chat with someone nearby
       if (Math.random() < 0.4) {
         this.showSpeechBubble(agentId, '...')
       }
 
-      // Stand there for a while
       const standDelay = Phaser.Math.Between(20000, 60000)
       s.wanderTimer = this.time.delayedCall(standDelay, () => {
         const ss = this.agents.get(agentId)
         if (!ss || ss.presenceState === 'WORKING') { onDone(); return }
 
-        // Return to desk or wander again
         if (Math.random() < 0.6) {
           ss.behaviour = 'WALKING'
           this.startWalkAnimation(agentId)
-          this.moveTo(ss, ss.deskX, ss.deskY, 1800, () => {
+          this.moveTo(ss, ss.deskPosition.x, ss.deskPosition.y, 1800, () => {
             const sss = this.agents.get(agentId)
             if (!sss) return
             this.stopWalking(sss)
@@ -1179,7 +1232,6 @@ export class OfficeScene extends Phaser.Scene {
         if (this.textures.exists(frameKey)) {
           s.sprite.setTexture(frameKey)
         }
-        // Flip based on direction
         s.sprite.setFlipX(!s.facingRight)
       },
     })
@@ -1200,7 +1252,6 @@ export class OfficeScene extends Phaser.Scene {
   // ── Movement ──────────────────────────────────────────────────────────────
 
   private moveTo(state: AgentState, tx: number, ty: number, duration: number, onComplete?: () => void) {
-    // Update facing direction
     state.facingRight = tx >= state.currentX
 
     this.tweens.killTweensOf(state.container)
@@ -1231,7 +1282,6 @@ export class OfficeScene extends Phaser.Scene {
     bg.fillStyle(0xffffff, 0.95)
     bg.fillRoundedRect(-20, -40, 40, 22, 6)
     bg.fillStyle(0xffffff, 0.95)
-    // Tail
     bg.fillTriangle(0, -20, -6, -10, 6, -10)
 
     const label = this.add.text(0, -30, text, {
@@ -1302,17 +1352,25 @@ export class OfficeScene extends Phaser.Scene {
     if (state.bubbleTimer) { state.bubbleTimer.destroy(); state.bubbleTimer = null }
     if (state.bubble) { state.bubble.destroy(); state.bubble = null }
 
+    // Stop walk animation for clean state transition
+    this.stopWalking(state)
+
     if (presenceState === 'WORKING') {
+      // Stop working animation if somehow already pulsing, then go to desk
+      this.stopWorkingAnimation(state)
       this.startWorkingBehaviour(agentId)
     } else if (presenceState === 'SMOKING') {
+      this.stopWorkingAnimation(state)
       this.moveToZone(agentId, 'smoking')
     } else if (presenceState === 'RESTING') {
+      this.stopWorkingAnimation(state)
       this.moveToZone(agentId, 'rest')
     } else if (presenceState === 'CHATTING') {
+      this.stopWorkingAnimation(state)
       this.moveToZone(agentId, 'chat')
     } else if (presenceState === 'IDLE') {
+      // Was working → now idle: stop working, wait 2-3s, start wandering
       if (prev === 'WORKING') {
-        // Was working, now idle — start autonomous behavior
         this.startIdleBehaviour(agentId)
       } else {
         this.startIdleBehaviour(agentId)
@@ -1350,6 +1408,7 @@ export class OfficeScene extends Phaser.Scene {
       if (state.emojiTimer) state.emojiTimer.destroy()
       if (state.bubbleTimer) state.bubbleTimer.destroy()
       if (state.frameTimer) state.frameTimer.destroy()
+      if (state.workingPulseRing) state.workingPulseRing.destroy()
     })
     this.agents.clear()
   }

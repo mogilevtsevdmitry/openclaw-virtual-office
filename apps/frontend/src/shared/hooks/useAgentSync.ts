@@ -11,7 +11,7 @@ interface OpenClawAgent {
   name: string
   emoji: string
   role: string
-  officeRole: 'DIRECTOR' | 'MANAGER' | 'FINANCIER' | 'WORKER' | 'ARCHIVIST'
+  officeRole: 'DIRECTOR' | 'BACKEND' | 'FINANCIER' | 'FRONTEND' | 'DEVOPS'
 }
 
 const SYNC_INTERVAL_MS = 30_000 // check for new agents every 30s

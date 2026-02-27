@@ -7,7 +7,9 @@ import { useAgentActivity } from '@shared/hooks/useAgentActivity'
 import { useAgentSync } from '@shared/hooks/useAgentSync'
 import { apiClient } from '@shared/api'
 import { AgentsPanel } from './AgentsPanel'
-import { ChatPanel } from './ChatPanel'
+import { TasksPanel } from '../tasks/TasksPanel'
+import { TokenWidget } from './TokenWidget'
+import taskStyles from '../tasks/TasksPanel.module.css'
 import styles from './OfficeApp.module.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,7 +20,7 @@ interface OpenClawAgent {
   emoji: string
   role: string
   isDefault: boolean
-  officeRole: 'DIRECTOR' | 'MANAGER' | 'FINANCIER' | 'WORKER' | 'ARCHIVIST'
+  officeRole: 'DIRECTOR' | 'BACKEND' | 'FINANCIER' | 'FRONTEND' | 'DEVOPS'
 }
 
 // ─── Phaser sync ──────────────────────────────────────────────────────────────
@@ -139,6 +141,7 @@ export function OfficeApp() {
   const [floorId, setFloorId] = useState<string | null>(null)
   const [zoneId, setZoneId] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'bootstrapping' | 'ready' | 'error'>('loading')
+  const [tasksOpen, setTasksOpen] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -208,11 +211,18 @@ export function OfficeApp() {
     <div className={styles.layout}>
       <div className={styles.leftSidebar}>
         <AgentsPanel />
+        <button
+          className={taskStyles.tasksButton}
+          onClick={() => setTasksOpen(true)}
+        >
+          📋 Задачи
+        </button>
       </div>
       <main className={styles.canvas}>
         <div ref={canvasRef} className={styles.phaserMount} />
       </main>
-      <ChatPanel />
+      {tasksOpen && <TasksPanel onClose={() => setTasksOpen(false)} />}
+      <TokenWidget />
     </div>
   )
 }
