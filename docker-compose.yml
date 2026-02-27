@@ -15,7 +15,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-friday_db}
       POSTGRES_USER: ${DB_USER:-friday}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       # Персистентное хранилище данных
       - postgres_data:/var/lib/postgresql/data
@@ -43,7 +43,7 @@ services:
       - .env
     environment:
       # Переопределяем DATABASE_URL — указывает на контейнер postgres
-      DATABASE_URL: postgresql://${DB_USER:-friday}:${DB_PASSWORD:-CHANGE_ME_DB_PASSWORD}@postgres:${DB_PORT:-5432}/${DB_NAME:-friday_db}?schema=public
+      DATABASE_URL: postgresql://${DB_USER:-friday}:${DB_PASSWORD}@postgres:${DB_PORT:-5432}/${DB_NAME:-friday_db}?schema=public
       DB_HOST: postgres
       DB_PORT: ${DB_PORT:-5432}
       NODE_ENV: ${NODE_ENV:-production}
