@@ -11,15 +11,16 @@ export interface OpenClawAgent {
   emoji: string;       // from IDENTITY.md
   role: string;        // from IDENTITY.md
   isDefault: boolean;  // true for main agent
-  officeRole: 'DIRECTOR' | 'MANAGER' | 'FINANCIER' | 'WORKER' | 'ARCHIVIST';
+  officeRole: 'DIRECTOR' | 'BACKEND' | 'FINANCIER' | 'FRONTEND' | 'DEVOPS' | 'ARCHITECT';
 }
 
 const ROLE_MAP: Record<string, OpenClawAgent['officeRole']> = {
   main:     'DIRECTOR',
   finance:  'FINANCIER',
-  backend:  'MANAGER',
-  devops:   'ARCHIVIST',
-  frontend: 'WORKER',
+  backend:  'BACKEND',
+  devops:   'DEVOPS',
+  frontend: 'FRONTEND',
+  ddd:      'ARCHITECT',
 };
 
 function parseIdentity(workspace: string): { name: string; emoji: string; role: string } {
@@ -77,7 +78,7 @@ function getOpenClawAgents(): OpenClawAgent[] {
         emoji: identity.emoji,
         role: identity.role,
         isDefault: id === defaultId,
-        officeRole: ROLE_MAP[id] ?? 'WORKER',
+        officeRole: ROLE_MAP[id] ?? 'FRONTEND',
       };
     });
 
@@ -106,7 +107,7 @@ function getFallback(): OpenClawAgent[] {
         emoji: identity.emoji,
         role: identity.role,
         isDefault: id === 'main',
-        officeRole: ROLE_MAP[id] ?? 'WORKER',
+        officeRole: ROLE_MAP[id] ?? 'FRONTEND',
       });
     }
   }

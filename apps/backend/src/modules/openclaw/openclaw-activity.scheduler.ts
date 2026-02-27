@@ -12,6 +12,7 @@ const AGENT_NAME_BY_ID: Record<string, string> = {
   backend:  '🏗️ Ваня',
   devops:   '🛠️ Федя',
   frontend: '⚡ Макс',
+  ddd:      '🏛️ Архитектор',
 };
 
 @Injectable()
