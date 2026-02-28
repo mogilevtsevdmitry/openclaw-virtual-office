@@ -1,0 +1,248 @@
+{
+  "edges": [
+    {
+      "from_file": "common/prisma/prisma.service.ts",
+      "from_func": "PrismaService.onModuleInit",
+      "to_file": "common/prisma/prisma.service.ts",
+      "to_func": "$connect"
+    },
+    {
+      "from_file": "modules/presence/infrastructure/presence-prisma.repository.ts",
+      "from_func": "PresencePrismaRepository.findByAgentId",
+      "to_file": "modules/presence/infrastructure/presence-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw-sync.service.ts",
+      "from_func": "OpenClawSyncService.syncAgents",
+      "to_file": "modules/openclaw/openclaw-sync.service.ts",
+      "to_func": "upsertAgent"
+    },
+    {
+      "from_file": "modules/office/domain/floor.aggregate.ts",
+      "from_func": "Floor.placeDesk",
+      "to_file": "modules/office/domain/floor.aggregate.ts",
+      "to_func": "incrementVersion"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw-sync.service.ts",
+      "from_func": "OpenClawSyncService.onModuleInit",
+      "to_file": "modules/openclaw/openclaw-sync.service.ts",
+      "to_func": "syncAgents"
+    },
+    {
+      "from_file": "modules/realtime/realtime.service.ts",
+      "from_func": "RealtimeService.onDeskPlaced",
+      "to_file": "modules/realtime/realtime.service.ts",
+      "to_func": "broadcast"
+    },
+    {
+      "from_file": "modules/office/infrastructure/floor-prisma.repository.ts",
+      "from_func": "FloorPrismaRepository.findById",
+      "to_file": "modules/office/infrastructure/floor-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw-sync.service.ts",
+      "from_func": "OpenClawSyncService.discoverAgents",
+      "to_file": "modules/openclaw/openclaw-sync.service.ts",
+      "to_func": "parseIdentity"
+    },
+    {
+      "from_file": "modules/agents/domain/agent.aggregate.ts",
+      "from_func": "Agent.deactivate",
+      "to_file": "modules/agents/domain/agent.aggregate.ts",
+      "to_func": "incrementVersion"
+    },
+    {
+      "from_file": "modules/office/domain/floor.aggregate.ts",
+      "from_func": "Floor.placeDesk",
+      "to_file": "modules/office/domain/floor.aggregate.ts",
+      "to_func": "addDomainEvent"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw-activity.scheduler.ts",
+      "from_func": "OpenClawActivityScheduler.onModuleInit",
+      "to_file": "modules/openclaw/openclaw-activity.scheduler.ts",
+      "to_func": "tick"
+    },
+    {
+      "from_file": "modules/presence/infrastructure/presence-prisma.repository.ts",
+      "from_func": "PresencePrismaRepository.findByTenantId",
+      "to_file": "modules/presence/infrastructure/presence-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/auth/infrastructure/user-prisma.repository.ts",
+      "from_func": "UserPrismaRepository.findById",
+      "to_file": "modules/auth/infrastructure/user-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/agents/domain/agent.aggregate.ts",
+      "from_func": "Agent.deactivate",
+      "to_file": "modules/agents/domain/agent.aggregate.ts",
+      "to_func": "addDomainEvent"
+    },
+    {
+      "from_file": "modules/realtime/realtime.service.ts",
+      "from_func": "RealtimeService.onAgentHired",
+      "to_file": "modules/realtime/realtime.service.ts",
+      "to_func": "broadcast"
+    },
+    {
+      "from_file": "modules/office/infrastructure/floor-prisma.repository.ts",
+      "from_func": "FloorPrismaRepository.findByTenantId",
+      "to_file": "modules/office/infrastructure/floor-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/auth/infrastructure/user-prisma.repository.ts",
+      "from_func": "UserPrismaRepository.findByEmail",
+      "to_file": "modules/auth/infrastructure/user-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/agents/infrastructure/agent-prisma.repository.ts",
+      "from_func": "AgentPrismaRepository.findByTenantId",
+      "to_file": "modules/agents/infrastructure/agent-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/office/domain/floor.aggregate.ts",
+      "from_func": "Floor.createDepartment",
+      "to_file": "modules/office/domain/floor.aggregate.ts",
+      "to_func": "addDomainEvent"
+    },
+    {
+      "from_file": "modules/tasks/tasks.service.ts",
+      "from_func": "TasksService.update",
+      "to_file": "modules/tasks/tasks.service.ts",
+      "to_func": "findOne"
+    },
+    {
+      "from_file": "modules/realtime/realtime.service.ts",
+      "from_func": "RealtimeService.onPresenceChanged",
+      "to_file": "modules/realtime/realtime.service.ts",
+      "to_func": "broadcast"
+    },
+    {
+      "from_file": "modules/presence/domain/agent-presence.aggregate.ts",
+      "from_func": "AgentPresence.changeActivity",
+      "to_file": "modules/presence/domain/agent-presence.aggregate.ts",
+      "to_func": "incrementVersion"
+    },
+    {
+      "from_file": "modules/realtime/realtime.service.ts",
+      "from_func": "RealtimeService.onFloorCreated",
+      "to_file": "modules/realtime/realtime.service.ts",
+      "to_func": "broadcast"
+    },
+    {
+      "from_file": "modules/tasks/tasks.service.ts",
+      "from_func": "TasksService.getHistory",
+      "to_file": "modules/tasks/tasks.service.ts",
+      "to_func": "readHistoryFromSessionStore"
+    },
+    {
+      "from_file": "modules/openclaw/session-status.controller.ts",
+      "from_func": "SessionStatusController.getSessionStatus",
+      "to_file": "modules/openclaw/session-status.controller.ts",
+      "to_func": "readFromSessionFile"
+    },
+    {
+      "from_file": "modules/tasks/tasks.service.ts",
+      "from_func": "TasksService.readHistoryFromSessionStore",
+      "to_file": "modules/tasks/tasks.service.ts",
+      "to_func": "extractToolCalls"
+    },
+    {
+      "from_file": "modules/presence/domain/agent-presence.aggregate.ts",
+      "from_func": "AgentPresence.changeActivity",
+      "to_file": "modules/presence/domain/agent-presence.aggregate.ts",
+      "to_func": "addDomainEvent"
+    },
+    {
+      "from_file": "common/prisma/prisma.service.ts",
+      "from_func": "PrismaService.onModuleDestroy",
+      "to_file": "common/prisma/prisma.service.ts",
+      "to_func": "$disconnect"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw.controller.ts",
+      "from_func": "OpenClawController.getAgents",
+      "to_file": "modules/openclaw/openclaw.controller.ts",
+      "to_func": "getOpenClawAgents"
+    },
+    {
+      "from_file": "modules/tasks/tasks.service.ts",
+      "from_func": "TasksService.readHistoryFromSessionStore",
+      "to_file": "modules/tasks/tasks.service.ts",
+      "to_func": "extractContent"
+    },
+    {
+      "from_file": "modules/agents/infrastructure/agent-prisma.repository.ts",
+      "from_func": "AgentPrismaRepository.findById",
+      "to_file": "modules/agents/infrastructure/agent-prisma.repository.ts",
+      "to_func": "toDomain"
+    },
+    {
+      "from_file": "modules/tasks/tasks-cleanup.scheduler.ts",
+      "from_func": "TasksCleanupScheduler.onModuleInit",
+      "to_file": "modules/tasks/tasks-cleanup.scheduler.ts",
+      "to_func": "runCleanup"
+    },
+    {
+      "from_file": "modules/realtime/realtime.service.ts",
+      "from_func": "RealtimeService.onMessageCreated",
+      "to_file": "modules/realtime/realtime.service.ts",
+      "to_func": "broadcast"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw-sync.service.ts",
+      "from_func": "OpenClawSyncService.syncAgents",
+      "to_file": "modules/openclaw/openclaw-sync.service.ts",
+      "to_func": "discoverAgents"
+    },
+    {
+      "from_file": "modules/openclaw/session-status.controller.ts",
+      "from_func": "SessionStatusController.getSessionStatus",
+      "to_file": "modules/openclaw/session-status.controller.ts",
+      "to_func": "getFallback"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw.controller.ts",
+      "from_func": "getFallback",
+      "to_file": "modules/openclaw/openclaw.controller.ts",
+      "to_func": "parseIdentity"
+    },
+    {
+      "from_file": "modules/realtime/realtime.service.ts",
+      "from_func": "RealtimeService.relayOutboxEvents",
+      "to_file": "modules/realtime/realtime.service.ts",
+      "to_func": "broadcast"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw.controller.ts",
+      "from_func": "getOpenClawAgents",
+      "to_file": "modules/openclaw/openclaw.controller.ts",
+      "to_func": "getFallback"
+    },
+    {
+      "from_file": "modules/openclaw/openclaw.controller.ts",
+      "from_func": "getOpenClawAgents",
+      "to_file": "modules/openclaw/openclaw.controller.ts",
+      "to_func": "parseIdentity"
+    },
+    {
+      "from_file": "modules/tasks/tasks.service.ts",
+      "from_func": "TasksService.getHistory",
+      "to_file": "modules/tasks/tasks.service.ts",
+      "to_func": "findOne"
+    }
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "timestamp": 1772262548.8828135
+}

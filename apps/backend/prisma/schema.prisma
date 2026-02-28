@@ -285,3 +285,334 @@ model Task {
   @@index([status])
   @@map("tasks")
 }
+
+// ==========================================
+// AI COMPANY — PIPELINE BC
+// ==========================================
+
+enum ProjectType {
+  WEB_APP
+  TELEGRAM_BOT
+  MICRO_SERVICE
+  LANDING
+  CUSTOM
+}
+
+enum PipelineStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  BLOCKED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum StageStatus {
+  PENDING
+  ACTIVE
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  SKIPPED
+  COMPLETED
+  FAILED
+}
+
+enum ArtifactType {
+  PRD
+  ADR
+  C4_DIAGRAM
+  DATA_MODEL
+  THREAT_MODEL
+  TEST_REPORT
+  DEPLOY_RECORD
+  RUNBOOK
+  CHANGE_REQUEST
+  POSTMORTEM
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CommandStatus {
+  PENDING
+  DRY_RUN
+  EXECUTING
+  SUCCEEDED
+  FAILED
+  ROLLED_BACK
+}
+
+// ── Tenant & Environment ──────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  plan      String   @default("standard") // standard | enterprise
+  mode      String   @default("autonomous") // autonomous | semi-autonomous
+  createdAt DateTime @default(now()) @map("created_at")
+
+  environments Environment[]
+  quotas       TenantQuota?
+  projects     Project[]
+
+  @@map("tenants")
+}
+
+model Environment {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String   // prod | staging | dev
+  type      String   // PRODUCTION | STAGING | DEVELOPMENT
+  config    Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  projects Project[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("environments")
+}
+
+model TenantQuota {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique @map("tenant_id")
+  maxProjects    Int      @default(10) @map("max_projects")
+  maxParallel    Int      @default(3) @map("max_parallel")
+  maxDeploysDay  Int      @default(20) @map("max_deploys_day")
+  tokenBudget    BigInt?  @map("token_budget") // NULL = unlimited
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_quotas")
+}
+
+// ── Project & Pipeline ────────────────────────────────────────────
+
+model Project {
+  id            String         @id @default(uuid())
+  tenantId      String         @map("tenant_id")
+  name          String
+  type          ProjectType
+  description   String?
+  repoUrl       String?        @map("repo_url")
+  environmentId String?        @map("environment_id")
+  status        PipelineStatus @default(PENDING)
+  meta          Json           @default("{}")
+  createdBy     String         @map("created_by")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  tenant      Tenant?       @relation(fields: [tenantId], references: [id])
+  environment Environment?  @relation(fields: [environmentId], references: [id])
+  runs        PipelineRun[]
+  artifacts   Artifact[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([type])
+  @@map("projects")
+}
+
+model PipelineRun {
+  id            String         @id @default(uuid())
+  projectId     String         @map("project_id")
+  tenantId      String         @map("tenant_id")
+  template      ProjectType
+  status        PipelineStatus @default(PENDING)
+  currentStage  String?        @map("current_stage")
+  startedAt     DateTime?      @map("started_at")
+  completedAt   DateTime?      @map("completed_at")
+  triggeredBy   String         @map("triggered_by")
+  correlationId String         @default(uuid()) @map("correlation_id")
+
+  project   Project         @relation(fields: [projectId], references: [id])
+  stages    PipelineStage[]
+  approvals Approval[]
+  commands  GatewayCommand[]
+
+  @@index([projectId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([correlationId])
+  @@map("pipeline_runs")
+}
+
+// ── Stage Machine ─────────────────────────────────────────────────
+
+model PipelineStage {
+  id           String      @id @default(uuid())
+  runId        String      @map("run_id")
+  tenantId     String      @map("tenant_id")
+  stageName    String      @map("stage_name")
+  stageOrder   Int         @map("stage_order")
+  status       StageStatus @default(PENDING)
+  ownerAgent   String      @map("owner_agent")
+  startedAt    DateTime?   @map("started_at")
+  completedAt  DateTime?   @map("completed_at")
+  gateResult   Json?       @map("gate_result")
+  attempts     Int         @default(0)
+  maxAttempts  Int         @default(3) @map("max_attempts")
+
+  run PipelineRun @relation(fields: [runId], references: [id])
+
+  @@unique([runId, stageName])
+  @@index([runId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("pipeline_stages")
+}
+
+// ── Artifacts ─────────────────────────────────────────────────────
+
+model Artifact {
+  id           String       @id @default(uuid())
+  tenantId     String       @map("tenant_id")
+  projectId    String       @map("project_id")
+  runId        String?      @map("run_id")
+  stageName    String?      @map("stage_name")
+  type         ArtifactType
+  title        String
+  version      Int          @default(1)
+  contentHash  String       @map("content_hash")
+  content      Json
+  contentPath  String?      @map("content_path")
+  ownerAgent   String       @map("owner_agent")
+  isSuperseded Boolean      @default(false) @map("is_superseded")
+  supersededBy String?      @map("superseded_by")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  changeRequests ChangeRequest[]
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([type])
+  @@index([stageName])
+  @@index([contentHash])
+  @@map("artifacts")
+}
+
+model ChangeRequest {
+  id          String   @id @default(uuid())
+  tenantId    String   @map("tenant_id")
+  projectId   String   @map("project_id")
+  artifactId  String   @map("artifact_id")
+  requestedBy String   @map("requested_by")
+  description String
+  impact      String   // LOW | MEDIUM | HIGH
+  status      String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  approvedBy  String?  @map("approved_by")
+  approvedAt  DateTime? @map("approved_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  artifact Artifact @relation(fields: [artifactId], references: [id])
+
+  @@index([projectId])
+  @@index([status])
+  @@map("change_requests")
+}
+
+// ── Policy & Approvals ────────────────────────────────────────────
+
+model PolicyRule {
+  id             String    @id @default(uuid())
+  tenantId       String?   @map("tenant_id") // NULL = системное правило
+  name           String
+  action         String    // deploy.prod | git.merge_main | db.migrate | ...
+  environment    String?   // NULL = все окружения
+  conditions     Json      // { require: [...], deny_if: [...] }
+  riskLevel      RiskLevel @map("risk_level")
+  requireHuman   Boolean   @default(false) @map("require_human")
+  requireAgents  String[]  @map("require_agents")
+  enabled        Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  approvals Approval[]
+
+  @@unique([tenantId, name])
+  @@index([action])
+  @@index([tenantId])
+  @@map("policy_rules")
+}
+
+model Approval {
+  id           String    @id @default(uuid())
+  tenantId     String    @map("tenant_id")
+  runId        String    @map("run_id")
+  stageName    String    @map("stage_name")
+  action       String
+  policyRuleId String?   @map("policy_rule_id")
+  requestedBy  String    @map("requested_by")
+  approvedBy   String?   @map("approved_by")
+  status       String    @default("PENDING") // PENDING | APPROVED | REJECTED | EXPIRED
+  reason       String?
+  expiresAt    DateTime? @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  decidedAt    DateTime? @map("decided_at")
+
+  run        PipelineRun @relation(fields: [runId], references: [id])
+  policyRule PolicyRule? @relation(fields: [policyRuleId], references: [id])
+
+  @@index([runId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("approvals")
+}
+
+// ── Tool Gateway ──────────────────────────────────────────────────
+
+model GatewayCommand {
+  id               String        @id @default(uuid())
+  tenantId         String        @map("tenant_id")
+  idempotencyKey   String        @unique @map("idempotency_key")
+  action           String        // git.push | deploy.prod | db.migrate | ...
+  tool             String        // git | ci | docker | kubectl | psql
+  params           Json
+  environment      String?
+  isDryRun         Boolean       @default(false) @map("is_dry_run")
+  dryRunResult     Json?         @map("dry_run_result")
+  status           CommandStatus @default(PENDING)
+  executedBy       String        @map("executed_by")
+  approvalId       String?       @map("approval_id")
+  runId            String?       @map("run_id")
+  result           Json?
+  error            String?
+  startedAt        DateTime?     @map("started_at")
+  completedAt      DateTime?     @map("completed_at")
+  rollbackCommandId String?      @map("rollback_command_id")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  run PipelineRun? @relation(fields: [runId], references: [id])
+
+  @@index([tenantId])
+  @@index([action])
+  @@index([status])
+  @@index([runId])
+  @@map("gateway_commands")
+}
+
+// ── Pipeline Templates ────────────────────────────────────────────
+
+model PipelineTemplate {
+  id        String      @id @default(uuid())
+  tenantId  String?     @map("tenant_id") // NULL = системный шаблон
+  type      ProjectType @unique
+  name      String
+  stages    Json        // массив stage definitions
+  gates     Json        // gate conditions
+  policies  Json        // policy rules для этого типа
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@map("pipeline_templates")
+}

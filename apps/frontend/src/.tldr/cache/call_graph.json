@@ -1,0 +1,392 @@
+{
+  "edges": [
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawDirectorOffice",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "placeTile"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.doWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWalking"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawPerimeterDecor"
+    },
+    {
+      "from_file": "shared/hooks/useOfficeWebSocket.ts",
+      "from_func": "useOfficeWebSocket",
+      "to_file": "shared/hooks/useOfficeWebSocket.ts",
+      "to_func": "dispatchWsEvent"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.addAgent",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWorkingBehaviour"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.goToDesk",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWalking"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startIdleBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWorkingAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.addAgent",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "getDeskPosition"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawPerimeterDecor",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawPoster"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.create",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawWorld"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startIdleBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWalking"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.setupMobileControls",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "getDistance"
+    },
+    {
+      "from_file": "features/auth/LoginForm.tsx",
+      "from_func": "LoginForm",
+      "to_file": "features/auth/LoginForm.tsx",
+      "to_func": "setAuth"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawZoneFloor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.create",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "setupCamera"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.create",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "setupBridge"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startWorkingBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "goToDesk"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.setupBridge",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "addAgent"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.goToDesk",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWorkingAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.scheduleWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "doWander"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawWorkZoneDecor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.onAgentMoved",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startIdleBehaviour"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawSmokingDecor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawLoungeDecor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.addAgent",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startIdleBehaviour"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.scheduleWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "scheduleWander"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.moveToZone",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "moveTo"
+    },
+    {
+      "from_file": "features/auth/LoginForm.tsx",
+      "from_func": "handleSubmit",
+      "to_file": "features/auth/LoginForm.tsx",
+      "to_func": "navigate"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawPerimeterDecor",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawLamp"
+    },
+    {
+      "from_file": "features/office/TokenWidget.tsx",
+      "from_func": "useSessionStatus",
+      "to_file": "features/office/TokenWidget.tsx",
+      "to_func": "fetchStatus"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.moveToZone",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWalkAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawPerimeterDecor",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawPlant"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startWorkingAnimation",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "showHeadEmoji"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.onAgentMoved",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWorkingAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.onAgentMoved",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWalking"
+    },
+    {
+      "from_file": "features/office/OfficeApp.tsx",
+      "from_func": "init",
+      "to_file": "features/office/OfficeApp.tsx",
+      "to_func": "bootstrapOffice"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.doWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "showSpeechBubble"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.doWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "moveTo"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startWorkingAnimation",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "scheduleWorkEmoji"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.scheduleWorkEmoji",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "showHeadEmoji"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawChatDecor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.addAgent",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "onAgentMoved"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.goToDesk",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "moveTo"
+    },
+    {
+      "from_file": "features/auth/LoginForm.tsx",
+      "from_func": "handleSubmit",
+      "to_file": "features/auth/LoginForm.tsx",
+      "to_func": "setAuth"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.doWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWalkAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startIdleBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "moveTo"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.create",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "generateAvatarTexture"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.goToDesk",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWalkAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startIdleBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWalkAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawDirectorOffice"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.scheduleWorkEmoji",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "scheduleWorkEmoji"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.doWander",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "doWander"
+    },
+    {
+      "from_file": "features/auth/LoginForm.tsx",
+      "from_func": "LoginForm",
+      "to_file": "features/auth/LoginForm.tsx",
+      "to_func": "navigate"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.moveToZone",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWalking"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startWorkingBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "stopWorkingAnimation"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawRestDecor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.create",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "setupMobileControls"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.drawWorld",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "drawMeetingDecor"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.setupBridge",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "onAgentMoved"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.onAgentMoved",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "moveToZone"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.create",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "setupSmoke"
+    },
+    {
+      "from_file": "shared/hooks/useAgentActivity.ts",
+      "from_func": "useAgentActivity",
+      "to_file": "shared/hooks/useAgentActivity.ts",
+      "to_func": "poll"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.startIdleBehaviour",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "scheduleWander"
+    },
+    {
+      "from_file": "features/office/phaser/OfficeScene.ts",
+      "from_func": "OfficeScene.onAgentMoved",
+      "to_file": "features/office/phaser/OfficeScene.ts",
+      "to_func": "startWorkingBehaviour"
+    }
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "timestamp": 1772262558.2880204
+}
