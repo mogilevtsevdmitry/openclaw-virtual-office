@@ -9,6 +9,7 @@ import { apiClient } from '@shared/api'
 import { AgentsPanel } from './AgentsPanel'
 import { TasksPanel } from '../tasks/TasksPanel'
 import { TokenWidget } from './TokenWidget'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import taskStyles from '../tasks/TasksPanel.module.css'
 import styles from './OfficeApp.module.css'
 
@@ -142,6 +143,9 @@ export function OfficeApp() {
   const [zoneId, setZoneId] = useState<string | null>(null)
   const [status, setStatus] = useState<'loading' | 'bootstrapping' | 'ready' | 'error'>('loading')
   const [tasksOpen, setTasksOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   useEffect(() => {
     let cancelled = false
@@ -192,6 +196,11 @@ export function OfficeApp() {
     return () => destroyGame()
   }, [status])
 
+  // Close drawer when switching to desktop
+  useEffect(() => {
+    if (!isMobile) setDrawerOpen(false)
+  }, [isMobile])
+
   if (status === 'loading' || status === 'bootstrapping') {
     return (
       <Splash
@@ -209,19 +218,69 @@ export function OfficeApp() {
 
   return (
     <div className={styles.layout}>
-      <div className={styles.leftSidebar}>
-        <AgentsPanel />
-        <button
-          className={taskStyles.tasksButton}
-          onClick={() => setTasksOpen(true)}
-        >
-          📋 Задачи
-        </button>
-      </div>
+      {/* Left sidebar — desktop only */}
+      {!isMobile && (
+        <div className={styles.leftSidebar}>
+          <AgentsPanel />
+          <button
+            className={taskStyles.tasksButton}
+            onClick={() => setTasksOpen(true)}
+          >
+            📋 Задачи
+          </button>
+        </div>
+      )}
+
+      {/* Canvas area */}
       <main className={styles.canvas}>
         <div ref={canvasRef} className={styles.phaserMount} />
+
+        {/* Hamburger — mobile only */}
+        {isMobile && (
+          <button
+            className={styles.hamburger}
+            onClick={() => setDrawerOpen((v) => !v)}
+            aria-label={drawerOpen ? 'Закрыть меню' : 'Открыть меню'}
+          >
+            {drawerOpen ? '✕' : '☰'}
+          </button>
+        )}
       </main>
+
+      {/* Tasks Panel — modal on desktop, drawer on mobile */}
+      {isMobile ? (
+        <>
+          {/* Backdrop */}
+          {drawerOpen && (
+            <div className={styles.drawerBackdrop} onClick={() => setDrawerOpen(false)} />
+          )}
+
+          {/* Drawer panel */}
+          <div className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ''}`}>
+            <div className={styles.drawerHeader}>
+              <span className={styles.drawerTitle}>Меню</span>
+              <button className={styles.drawerClose} onClick={() => setDrawerOpen(false)}>✕</button>
+            </div>
+            <div className={styles.drawerContent}>
+              <AgentsPanel />
+              <button
+                className={taskStyles.tasksButton}
+                onClick={() => {
+                  setTasksOpen(true)
+                  setDrawerOpen(false)
+                }}
+              >
+                📋 Задачи
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      {/* Tasks Modal */}
       {tasksOpen && <TasksPanel onClose={() => setTasksOpen(false)} />}
+
+      {/* Token Widget */}
       <TokenWidget />
     </div>
   )

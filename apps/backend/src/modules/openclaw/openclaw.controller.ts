@@ -11,16 +11,25 @@ export interface OpenClawAgent {
   emoji: string;       // from IDENTITY.md
   role: string;        // from IDENTITY.md
   isDefault: boolean;  // true for main agent
-  officeRole: 'DIRECTOR' | 'BACKEND' | 'FINANCIER' | 'FRONTEND' | 'DEVOPS' | 'ARCHITECT';
+  officeRole: 'DIRECTOR' | 'BACKEND' | 'FINANCIER' | 'FRONTEND' | 'DEVOPS' | 'ARCHITECT' | 'SECURITY' | 'ARCHIVIST' | 'SOLUTION_ARCHITECT' | 'SQL_ARCHITECT' | 'TECH_WRITER' | 'QA' | 'PRODUCT' | 'TECH_LEAD' | 'BA';
 }
 
 const ROLE_MAP: Record<string, OpenClawAgent['officeRole']> = {
-  main:     'DIRECTOR',
-  finance:  'FINANCIER',
-  backend:  'BACKEND',
-  devops:   'DEVOPS',
-  frontend: 'FRONTEND',
-  ddd:      'ARCHITECT',
+  main:       'DIRECTOR',
+  finance:    'FINANCIER',
+  backend:    'BACKEND',
+  devops:     'DEVOPS',
+  frontend:   'FRONTEND',
+  ddd:        'ARCHITECT',
+  security:   'SECURITY',
+  archivist:  'ARCHIVIST',
+  solution:   'SOLUTION_ARCHITECT',
+  sql:        'SQL_ARCHITECT',
+  techwriter: 'TECH_WRITER',
+  qa:         'QA',
+  product:    'PRODUCT',
+  techlead:   'TECH_LEAD',
+  ba:         'BA',
 };
 
 function parseIdentity(workspace: string): { name: string; emoji: string; role: string } {

@@ -314,4 +314,20 @@ export class TasksService {
     }
     return calls;
   }
+
+  // Auto-cleanup stale RUNNING tasks (no sessionKey or older than 2h)
+  async cleanupStaleTasks(): Promise<number> {
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const result = await this.prisma.task.updateMany({
+      where: {
+        status: 'RUNNING',
+        OR: [
+          { sessionKey: null },
+          { updatedAt: { lt: twoHoursAgo } },
+        ],
+      },
+      data: { status: 'DONE' },
+    });
+    return result.count;
+  }
 }

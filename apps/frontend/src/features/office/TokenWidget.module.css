@@ -65,3 +65,50 @@
 .stale {
   opacity: 0.5;
 }
+
+.warning {
+  border: 1px solid rgba(241, 196, 15, 0.4);
+}
+
+.critical {
+  border: 1px solid rgba(231, 76, 60, 0.6);
+  animation: criticalPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+  0%, 100% { border-color: rgba(231, 76, 60, 0.6); }
+  50% { border-color: rgba(231, 76, 60, 1); box-shadow: 0 0 8px rgba(231, 76, 60, 0.4); }
+}
+
+.warningBanner {
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: rgba(241, 196, 15, 0.15);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #f1c40f;
+  text-align: center;
+}
+
+.criticalBanner {
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: rgba(231, 76, 60, 0.15);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #e74c3c;
+  text-align: center;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .widget {
+    top: 8px;
+    left: 8px;
+    bottom: auto;
+    right: auto;
+    max-width: 160px;
+    font-size: 10px;
+    padding: 6px 8px;
+  }
+}

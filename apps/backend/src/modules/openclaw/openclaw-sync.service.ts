@@ -15,12 +15,21 @@ interface AgentSeed {
  * Derived from ROLE_MAP in openclaw.controller.ts — keep in sync.
  */
 const ROLE_MAP: Record<string, string> = {
-  main:     'DIRECTOR',
-  finance:  'FINANCIER',
-  backend:  'BACKEND',
-  devops:   'DEVOPS',
-  frontend: 'FRONTEND',
-  ddd:      'ARCHITECT',
+  main:       'DIRECTOR',
+  finance:    'FINANCIER',
+  backend:    'BACKEND',
+  devops:     'DEVOPS',
+  frontend:   'FRONTEND',
+  ddd:        'ARCHITECT',
+  security:   'SECURITY',
+  archivist:  'ARCHIVIST',
+  solution:   'SOLUTION_ARCHITECT',
+  sql:        'SQL_ARCHITECT',
+  techwriter: 'TECH_WRITER',
+  qa:         'QA',
+  product:    'PRODUCT',
+  techlead:   'TECH_LEAD',
+  ba:         'BA',
 };
 
 const DEFAULT_TENANT_ID = 'tenant-smoke';

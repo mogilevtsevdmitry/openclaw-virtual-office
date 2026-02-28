@@ -66,38 +66,51 @@ const ZONES: ZoneDef[] = [
 ]
 
 // Desk positions in work zone (world coords)
+// NOTE: Director office occupies x=62..254, y=62..222 — other desks start at y=250+
 const DESKS: { x: number; y: number; agentKey: string }[] = [
-  { x: 120, y: 130, agentKey: 'DIRECTOR' },
-  { x: 270, y: 130, agentKey: 'FINANCIER' },
-  { x: 420, y: 130, agentKey: 'BACKEND' },
-  { x: 570, y: 130, agentKey: 'DEVOPS' },
-  { x: 720, y: 130, agentKey: 'FRONTEND' },
-  { x: 120, y: 280, agentKey: '' },
-  { x: 270, y: 280, agentKey: '' },
-  { x: 420, y: 280, agentKey: '' },
+  { x: 120, y: 155, agentKey: 'DIRECTOR' },  // inside director office (visual only)
+  { x: 310, y: 250, agentKey: 'FINANCIER' },
+  { x: 450, y: 250, agentKey: 'BACKEND' },
+  { x: 590, y: 250, agentKey: 'DEVOPS' },
+  { x: 730, y: 250, agentKey: 'FRONTEND' },
+  { x: 310, y: 330, agentKey: '' },
+  { x: 450, y: 330, agentKey: '' },
+  { x: 590, y: 330, agentKey: '' },
 ]
 
 const ROLE_DESK: Record<string, { x: number; y: number }> = {
-  DIRECTOR:  { x: 120, y: 145 },
-  FINANCIER: { x: 270, y: 145 },
-  BACKEND:   { x: 420, y: 145 },
-  DEVOPS:    { x: 570, y: 145 },
-  FRONTEND:  { x: 720, y: 145 },
-  // Архитектор — рядом с BACKEND, второй ряд
-  ARCHITECT: { x: 420, y: 280 },
+  DIRECTOR:  { x: 142, y: 120 },  // внутри кабинета: ox=62 + 2*32 + 16, oy=62 + 1*32 + 24
+  FINANCIER: { x: 310, y: 265 },
+  BACKEND:   { x: 450, y: 265 },
+  DEVOPS:    { x: 590, y: 265 },
+  FRONTEND:  { x: 730, y: 265 },
+  // Архитектор — второй ряд
+  ARCHITECT: { x: 450, y: 330 },
+  // Security Auditor — второй ряд
+  SECURITY:  { x: 560, y: 330 },
+  // Ряд 3 (y=400)
+  ARCHIVIST:          { x: 200, y: 400 },
+  SOLUTION_ARCHITECT: { x: 310, y: 400 },
+  SQL_ARCHITECT:      { x: 420, y: 400 },
+  TECH_WRITER:        { x: 530, y: 400 },
+  QA:                 { x: 640, y: 400 },
+  // Ряд 4 (y=470)
+  PRODUCT:            { x: 200, y: 470 },
+  TECH_LEAD:          { x: 310, y: 470 },
+  BA:                 { x: 420, y: 470 },
 }
 
 // Пул свободных столов в общей рабочей зоне — для агентов без выделенного места
 const SHARED_DESK_POOL: { x: number; y: number }[] = [
-  { x: 120, y: 280 },
-  { x: 270, y: 280 },
-  { x: 570, y: 280 },
-  { x: 720, y: 280 },
-  { x: 120, y: 380 },
-  { x: 270, y: 380 },
-  { x: 420, y: 380 },
-  { x: 570, y: 380 },
-  { x: 720, y: 380 },
+  { x: 310, y: 330 },
+  { x: 450, y: 330 },
+  { x: 590, y: 330 },
+  { x: 730, y: 330 },
+  { x: 200, y: 400 },
+  { x: 310, y: 400 },
+  { x: 420, y: 400 },
+  { x: 530, y: 400 },
+  { x: 640, y: 400 },
 ]
 
 const usedSharedDesks = new Set<string>()
@@ -156,7 +169,7 @@ interface AvatarDef {
   shoeColor: number
   accessory: 'glasses' | 'cap' | 'beret' | 'earrings' | 'headphones' | 'none'
   accessoryColor: number
-  extra: 'folder' | 'phone' | 'none'
+  extra: 'folder' | 'phone' | 'laptop' | 'none'
 }
 
 const AVATAR_DEFS: AvatarDef[] = [
@@ -225,6 +238,123 @@ const AVATAR_DEFS: AvatarDef[] = [
     accessoryColor: 0x2c3e50,
     extra: 'phone',
   },
+  {
+    key: 'SECURITY',
+    role: 'SECURITY',
+    skinColor: 0xf5d5a8,
+    hairColor: 0x2c2c2c,
+    bodyColor: 0x2c3e50,
+    bodyAlt: 0x1a252f,
+    pantsColor: 0x1a252f,
+    shoeColor: 0x222222,
+    accessory: 'glasses',
+    accessoryColor: 0x27ae60,
+    extra: 'laptop',
+  },
+  {
+    key: 'ARCHIVIST',
+    role: 'ARCHIVIST',
+    skinColor: 0xf5e6d3,
+    hairColor: 0x8b6914,
+    bodyColor: 0x6c3483,
+    bodyAlt: 0x5b2c6f,
+    pantsColor: 0x2c3e50,
+    shoeColor: 0x1a1a1a,
+    accessory: 'glasses',
+    accessoryColor: 0x9b59b6,
+    extra: 'laptop',
+  },
+  {
+    key: 'SOLUTION_ARCHITECT',
+    role: 'SOLUTION_ARCHITECT',
+    skinColor: 0xf0d5a8,
+    hairColor: 0x1a1a1a,
+    bodyColor: 0x1a5276,
+    bodyAlt: 0x154360,
+    pantsColor: 0x1c2833,
+    shoeColor: 0x222222,
+    accessory: 'none',
+    accessoryColor: 0x3498db,
+    extra: 'laptop',
+  },
+  {
+    key: 'SQL_ARCHITECT',
+    role: 'SQL_ARCHITECT',
+    skinColor: 0xfde8c8,
+    hairColor: 0x5d4037,
+    bodyColor: 0x1e8449,
+    bodyAlt: 0x196f3d,
+    pantsColor: 0x2c3e50,
+    shoeColor: 0x333333,
+    accessory: 'none',
+    accessoryColor: 0x27ae60,
+    extra: 'laptop',
+  },
+  {
+    key: 'TECH_WRITER',
+    role: 'TECH_WRITER',
+    skinColor: 0xffe0bd,
+    hairColor: 0xd4a017,
+    bodyColor: 0xe67e22,
+    bodyAlt: 0xca6f1e,
+    pantsColor: 0x2c3e50,
+    shoeColor: 0x4a3728,
+    accessory: 'none',
+    accessoryColor: 0xf39c12,
+    extra: 'laptop',
+  },
+  {
+    key: 'QA',
+    role: 'QA',
+    skinColor: 0xf5cba7,
+    hairColor: 0x922b21,
+    bodyColor: 0x78281f,
+    bodyAlt: 0x641e16,
+    pantsColor: 0x1a252f,
+    shoeColor: 0x222222,
+    accessory: 'none',
+    accessoryColor: 0xe74c3c,
+    extra: 'laptop',
+  },
+  {
+    key: 'PRODUCT',
+    role: 'PRODUCT',
+    skinColor: 0xfad7a0,
+    hairColor: 0x1a1a1a,
+    bodyColor: 0x2e86c1,
+    bodyAlt: 0x2874a6,
+    pantsColor: 0x212f3d,
+    shoeColor: 0x1a1a1a,
+    accessory: 'none',
+    accessoryColor: 0x3498db,
+    extra: 'phone',
+  },
+  {
+    key: 'TECH_LEAD',
+    role: 'TECH_LEAD',
+    skinColor: 0xf0c27f,
+    hairColor: 0x2c2c2c,
+    bodyColor: 0x1b2631,
+    bodyAlt: 0x17202a,
+    pantsColor: 0x1b2631,
+    shoeColor: 0x111111,
+    accessory: 'none',
+    accessoryColor: 0xf1c40f,
+    extra: 'laptop',
+  },
+  {
+    key: 'BA',
+    role: 'BA',
+    skinColor: 0xfde9d9,
+    hairColor: 0x784212,
+    bodyColor: 0x884ea0,
+    bodyAlt: 0x76448a,
+    pantsColor: 0x2c3e50,
+    shoeColor: 0x3d2b1f,
+    accessory: 'glasses',
+    accessoryColor: 0x8e44ad,
+    extra: 'laptop',
+  },
 ]
 
 // ─── Agent state ──────────────────────────────────────────────────────────────
@@ -267,7 +397,41 @@ export class OfficeScene extends Phaser.Scene {
   }
 
   preload() {
-    // nothing — textures generated procedurally in create()
+    // LimeZu tilesets
+    this.load.image('limezu-interiors', '/assets/limezu/Interiors_free_16x16.png')
+    this.load.image('limezu-rooms', '/assets/limezu/Room_Builder_free_16x16.png')
+    this.load.image('limezu-interiors-32', '/assets/limezu/Interiors_free_32x32.png')
+
+    // LimeZu characters (spritesheets — 4 frames walk cycle, 48×32 per direction)
+    this.load.spritesheet('limezu-adam', '/assets/limezu/Adam_16x16.png', { frameWidth: 16, frameHeight: 32 })
+    this.load.spritesheet('limezu-amelia', '/assets/limezu/Amelia_16x16.png', { frameWidth: 16, frameHeight: 32 })
+    this.load.spritesheet('limezu-bob', '/assets/limezu/Bob_16x16.png', { frameWidth: 16, frameHeight: 32 })
+    this.load.spritesheet('limezu-alex', '/assets/limezu/Alex_16x16.png', { frameWidth: 16, frameHeight: 32 })
+  }
+
+  // ── Tile placement from tileset atlas ────────────────────────────────────
+
+  private placeTile(
+    texture: string,
+    srcX: number, srcY: number, srcW: number, srcH: number,
+    destX: number, destY: number,
+    scale: number = 2,
+    depth: number = 2,
+  ): Phaser.GameObjects.Image {
+    // Position the full tileset image so the desired tile appears at destX/destY
+    const img = this.add.image(destX - srcX * scale, destY - srcY * scale, texture)
+    img.setOrigin(0, 0)
+    img.setScale(scale)
+    img.setDepth(depth)
+
+    // Mask to clip only the tile region
+    const maskShape = this.add.graphics()
+    maskShape.fillStyle(0xffffff)
+    maskShape.fillRect(destX, destY, srcW * scale, srcH * scale)
+    const mask = maskShape.createGeometryMask()
+    img.setMask(mask)
+
+    return img
   }
 
   // ── Avatar texture generation ──────────────────────────────────────────────
@@ -352,6 +516,11 @@ export class OfficeScene extends Phaser.Scene {
         g.fillRect(4, 20, 5, 7)
         g.fillStyle(0xe67e22, 1)
         g.fillRect(4, 20, 5, 1)
+      } else if (def.extra === 'laptop') {
+        g.fillStyle(0x2c3e50, 1)
+        g.fillRect(3, 21, 8, 5)
+        g.fillStyle(0x27ae60, 0.8)
+        g.fillRect(4, 22, 6, 3)
       }
 
       // ── NECK ──
@@ -448,6 +617,9 @@ export class OfficeScene extends Phaser.Scene {
     this.setupCamera()
     this.setupSmoke()
     this.setupBridge()
+
+    // ─── Mobile: Pinch-to-zoom + Pan ─────────────────────────────────────────
+    this.setupMobileControls()
   }
 
   // ── World drawing ──────────────────────────────────────────────────────────
@@ -467,6 +639,7 @@ export class OfficeScene extends Phaser.Scene {
     }
 
     this.drawWorkZoneDecor()
+    this.drawDirectorOffice()
     this.drawMeetingDecor()
     this.drawChatDecor()
     this.drawRestDecor()
@@ -522,6 +695,9 @@ export class OfficeScene extends Phaser.Scene {
     g.setDepth(1)
 
     for (const desk of DESKS.slice(0, 5)) {
+      // DIRECTOR gets a dedicated office room — skip generic desk drawing
+      if (desk.agentKey === 'DIRECTOR') continue
+
       g.fillStyle(0x3a3a5a, 1)
       g.fillRoundedRect(desk.x - 40, desk.y - 20, 80, 40, 4)
       g.lineStyle(1, 0x5a5a8a, 0.8)
@@ -567,6 +743,42 @@ export class OfficeScene extends Phaser.Scene {
     g.fillStyle(0xcba6f7, 0.25)
     g.fillRect(architectDesk.x - 20, architectDesk.y - 36, 40, 22)
 
+    // SECURITY desk — рядом с DEVOPS (x=530, y=280)
+    const securityDesk = ROLE_DESK['SECURITY']
+    if (securityDesk) {
+      const sd = this.add.graphics()
+      sd.fillStyle(0x2c3e50, 1)
+      sd.fillRect(securityDesk.x - 28, securityDesk.y - 16, 56, 32)
+      sd.fillStyle(0x1a252f, 1)
+      sd.fillRect(securityDesk.x - 24, securityDesk.y - 12, 48, 24)
+    }
+
+    // Row 3 desks
+    const row3Roles = ['ARCHIVIST', 'SOLUTION_ARCHITECT', 'SQL_ARCHITECT', 'TECH_WRITER', 'QA']
+    for (const role of row3Roles) {
+      const deskPos = ROLE_DESK[role]
+      if (deskPos) {
+        const dg = this.add.graphics()
+        dg.fillStyle(0x2d3561, 1)
+        dg.fillRect(deskPos.x - 28, deskPos.y - 16, 56, 32)
+        dg.fillStyle(0x1f2547, 1)
+        dg.fillRect(deskPos.x - 24, deskPos.y - 12, 48, 24)
+      }
+    }
+
+    // Row 4 desks
+    const row4Roles = ['PRODUCT', 'TECH_LEAD', 'BA']
+    for (const role of row4Roles) {
+      const deskPos = ROLE_DESK[role]
+      if (deskPos) {
+        const dg = this.add.graphics()
+        dg.fillStyle(0x1a3a4a, 1)
+        dg.fillRect(deskPos.x - 28, deskPos.y - 16, 56, 32)
+        dg.fillStyle(0x122533, 1)
+        dg.fillRect(deskPos.x - 24, deskPos.y - 12, 48, 24)
+      }
+    }
+
     // Общие столы (shared pool) — лёгкая отметка цветом 0x334455
     for (const pos of SHARED_DESK_POOL) {
       g.fillStyle(0x334455, 1)
@@ -575,8 +787,104 @@ export class OfficeScene extends Phaser.Scene {
       g.strokeRoundedRect(pos.x - 40, pos.y - 20, 80, 40, 4)
     }
 
+    // General work zone highlight (below the director office)
     g.fillStyle(0x1e2040, 0.4)
-    g.fillRoundedRect(80, 95, 800, 340, 8)
+    g.fillRoundedRect(80, 230, 800, 200, 8)
+  }
+
+  private drawDirectorOffice(): void {
+    const ox = 62    // office origin x — aligned with work zone left edge
+    const oy = 62    // office origin y — aligned with work zone top edge
+    const scale = 2  // 16px tiles → 32px on screen
+    const T = 16 * scale  // tile size on screen = 32px
+
+    // Office is 6×5 tiles = 192×160px on screen
+
+    // ── Floor tiles (деревянный пол) ──────────────────────────────────────
+    // Room_Builder_free_16x16.png: деревянный пол x=48, y=80
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 6; col++) {
+        this.placeTile('limezu-rooms', 48, 80, 16, 16, ox + col * T, oy + row * T, scale, 1)
+      }
+    }
+
+    // ── Walls ──────────────────────────────────────────────────────────────
+    // Top wall: x=16, y=80 (тёмно-коричневая стена)
+    for (let col = 0; col < 6; col++) {
+      this.placeTile('limezu-rooms', 16, 80, 16, 16, ox + col * T, oy, scale, 2)
+    }
+    // Left wall
+    for (let row = 1; row < 5; row++) {
+      this.placeTile('limezu-rooms', 16, 80, 16, 16, ox, oy + row * T, scale, 2)
+    }
+    // Right wall
+    for (let row = 1; row < 5; row++) {
+      this.placeTile('limezu-rooms', 16, 80, 16, 16, ox + 5 * T, oy + row * T, scale, 2)
+    }
+
+    // ── Door gap in bottom wall ────────────────────────────────────────────
+    // Bottom row (row=4): tiles 0, 1, 4, 5 are walls; tiles 2, 3 are door gap
+    this.placeTile('limezu-rooms', 16, 80, 16, 16, ox + 0 * T, oy + 4 * T, scale, 2)
+    this.placeTile('limezu-rooms', 16, 80, 16, 16, ox + 1 * T, oy + 4 * T, scale, 2)
+    // Tiles 2 and 3 are left open (door)
+    this.placeTile('limezu-rooms', 16, 80, 16, 16, ox + 4 * T, oy + 4 * T, scale, 2)
+    this.placeTile('limezu-rooms', 16, 80, 16, 16, ox + 5 * T, oy + 4 * T, scale, 2)
+
+    // Door frame posts (drawn on top with graphics)
+    const door = this.add.graphics().setDepth(3)
+    door.fillStyle(0x4a3010, 1)
+    door.fillRect(ox + 2 * T - 2, oy + 4 * T - 4, 4, T + 4) // left post
+    door.fillRect(ox + 4 * T - 2, oy + 4 * T - 4, 4, T + 4) // right post
+
+    // ── Carpet (красно-бордовый) ───────────────────────────────────────────
+    // Interiors_free_16x16.png: x=96, y=288, 48×32 — 3×2 tiles
+    // Placed at col=1, row=1 (one tile inset from walls)
+    this.placeTile('limezu-interiors', 96, 288, 48, 32, ox + 1 * T, oy + 1 * T, scale, 2)
+
+    // ── Bookshelf on left wall ─────────────────────────────────────────────
+    // Interiors_free_16x16.png: x=0, y=288, 32×32 — 2×2 tiles
+    this.placeTile('limezu-interiors', 0, 288, 32, 32, ox + 0 * T, oy + 1 * T, scale, 3)
+
+    // ── Executive desk (деревянный стол) ──────────────────────────────────
+    // Interiors_free_16x16.png: x=48, y=192, 32×32 — 2×2 tiles
+    this.placeTile('limezu-interiors', 48, 192, 32, 32, ox + 2 * T, oy + 1 * T, scale, 3)
+
+    // ── Monitor on desk ───────────────────────────────────────────────────
+    // Interiors_free_16x16.png: x=0, y=96, 16×16 — 1×1 tile
+    this.placeTile('limezu-interiors', 0, 96, 16, 16, ox + 2 * T + 8, oy + 1 * T + 8, scale, 4)
+
+    // ── Office chair (тёмное кресло) ──────────────────────────────────────
+    // Interiors_free_16x16.png: x=128, y=448, 16×16
+    this.placeTile('limezu-interiors', 128, 448, 16, 16, ox + 2 * T + 8, oy + 3 * T, scale, 3)
+
+    // ── Plant in right corner ─────────────────────────────────────────────
+    // Interiors_free_16x16.png: x=0, y=368, 16×16
+    this.placeTile('limezu-interiors', 0, 368, 16, 16, ox + 5 * T - T, oy + 1 * T, scale, 3)
+
+    // ── Nameplate on desk (graphics overlay) ──────────────────────────────
+    const plate = this.add.graphics().setDepth(5)
+    plate.fillStyle(0xd4af37, 1)
+    plate.fillRect(ox + 2 * T + 4, oy + T - 8, 62, 7)
+    plate.fillStyle(0xf0c040, 0.4)
+    plate.fillRect(ox + 2 * T + 5, oy + T - 7, 30, 2)
+
+    this.add.text(ox + 2 * T + 35, oy + T - 4, '🖤 DIRECTOR', {
+      fontSize: '5px',
+      color: '#1a0a0a',
+      fontFamily: 'monospace',
+    }).setOrigin(0.5).setDepth(6)
+
+    // ── Room label ────────────────────────────────────────────────────────
+    this.add.text(ox + 3 * T, oy + 6, 'Кабинет директора', {
+      fontSize: '6px',
+      color: '#cccccc',
+      fontFamily: 'monospace',
+    }).setOrigin(0.5, 0).setDepth(6)
+
+    // ── Accent glow overlay ────────────────────────────────────────────────
+    const light = this.add.graphics().setDepth(1)
+    light.fillStyle(0xd4af37, 0.06)
+    light.fillRect(ox + T, oy + T, 4 * T, 3 * T)
   }
 
   private drawMeetingDecor() {
@@ -1395,6 +1703,85 @@ export class OfficeScene extends Phaser.Scene {
       this.stopWalking(s)
       s.behaviour = 'WANDERING'
     })
+  }
+
+  // ── Mobile controls ───────────────────────────────────────────────────────
+
+  private setupMobileControls(): void {
+    const cam = this.cameras.main
+
+    const MIN_ZOOM = 0.5
+    const MAX_ZOOM = 2.5
+    const INITIAL_ZOOM = cam.zoom
+
+    let lastPinchDist = 0
+    let isPinching = false
+    let panStartX = 0
+    let panStartY = 0
+    let camStartScrollX = 0
+    let camStartScrollY = 0
+
+    const getDistance = (p1: Touch, p2: Touch): number => {
+      const dx = p1.clientX - p2.clientX
+      const dy = p1.clientY - p2.clientY
+      return Math.sqrt(dx * dx + dy * dy)
+    }
+
+    const canvas = this.game.canvas
+
+    canvas.addEventListener('touchstart', (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        isPinching = true
+        lastPinchDist = getDistance(e.touches[0], e.touches[1])
+      } else if (e.touches.length === 1) {
+        isPinching = false
+        panStartX = e.touches[0].clientX
+        panStartY = e.touches[0].clientY
+        camStartScrollX = cam.scrollX
+        camStartScrollY = cam.scrollY
+      }
+    }, { passive: true })
+
+    canvas.addEventListener('touchmove', (e: TouchEvent) => {
+      e.preventDefault()
+
+      if (e.touches.length === 2 && isPinching) {
+        const dist = getDistance(e.touches[0], e.touches[1])
+        const scale = dist / lastPinchDist
+        const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, cam.zoom * scale))
+        cam.setZoom(newZoom)
+        lastPinchDist = dist
+      } else if (e.touches.length === 1 && !isPinching) {
+        const dx = (e.touches[0].clientX - panStartX) / cam.zoom
+        const dy = (e.touches[0].clientY - panStartY) / cam.zoom
+        cam.setScroll(camStartScrollX - dx, camStartScrollY - dy)
+      }
+    }, { passive: false })
+
+    canvas.addEventListener('touchend', (e: TouchEvent) => {
+      if (e.touches.length < 2) {
+        isPinching = false
+        if (e.touches.length === 1) {
+          panStartX = e.touches[0].clientX
+          panStartY = e.touches[0].clientY
+          camStartScrollX = cam.scrollX
+          camStartScrollY = cam.scrollY
+        }
+      }
+    }, { passive: true })
+
+    // Double-tap to reset zoom
+    let lastTap = 0
+    canvas.addEventListener('touchend', (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        const now = Date.now()
+        if (now - lastTap < 300) {
+          cam.setZoom(INITIAL_ZOOM)
+          cam.setScroll(0, 0)
+        }
+        lastTap = now
+      }
+    }, { passive: true })
   }
 
   // ── Shutdown ──────────────────────────────────────────────────────────────

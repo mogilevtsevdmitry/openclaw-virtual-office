@@ -7,12 +7,21 @@ const POLL_INTERVAL_MS = 15_000; // check every 15s
 
 // Map openclaw agentId → office role name (for display name matching)
 const AGENT_NAME_BY_ID: Record<string, string> = {
-  main:     '🖤 Пятница',
-  finance:  '💰 Зина',
-  backend:  '🏗️ Ваня',
-  devops:   '🛠️ Федя',
-  frontend: '⚡ Макс',
-  ddd:      '🏛️ Архитектор',
+  main:       '🖤 Пятница',
+  finance:    '💰 Зина',
+  backend:    '🏗️ Ваня',
+  devops:     '🛠️ Федя',
+  frontend:   '⚡ Макс',
+  ddd:        '🏛️ Архитектор',
+  security:   '🔒 Вова',
+  archivist:  '📚 Архивист',
+  solution:   '🗺️ Solution Architect',
+  sql:        '🗃️ SQL Архитектор',
+  techwriter: '✍️ Тех. писатель',
+  qa:         '🧪 QA инженер',
+  product:    '📦 Продакт',
+  techlead:   '🎯 Tech Lead',
+  ba:         '📋 Бизнес-аналитик',
 };
 
 @Injectable()

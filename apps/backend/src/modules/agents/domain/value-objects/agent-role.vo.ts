@@ -1,9 +1,9 @@
 import { DomainException } from '../../../../../../../libs/shared-kernel/src/domain/domain.exception';
 import { ValueObject } from '../../../../../../../libs/shared-kernel/src/domain/value-object.base';
 
-export type AgentRoleType = 'FRONTEND' | 'BACKEND' | 'DEVOPS' | 'FINANCIER' | 'DIRECTOR' | 'ARCHITECT';
+export type AgentRoleType = 'FRONTEND' | 'BACKEND' | 'DEVOPS' | 'FINANCIER' | 'DIRECTOR' | 'ARCHITECT' | 'SECURITY' | 'ARCHIVIST' | 'SOLUTION_ARCHITECT' | 'SQL_ARCHITECT' | 'TECH_WRITER' | 'QA' | 'PRODUCT' | 'TECH_LEAD' | 'BA';
 
-const VALID_ROLES: AgentRoleType[] = ['FRONTEND', 'BACKEND', 'DEVOPS', 'FINANCIER', 'DIRECTOR', 'ARCHITECT'];
+const VALID_ROLES: AgentRoleType[] = ['FRONTEND', 'BACKEND', 'DEVOPS', 'FINANCIER', 'DIRECTOR', 'ARCHITECT', 'SECURITY', 'ARCHIVIST', 'SOLUTION_ARCHITECT', 'SQL_ARCHITECT', 'TECH_WRITER', 'QA', 'PRODUCT', 'TECH_LEAD', 'BA'];
 
 interface AgentRoleProps {
   value: AgentRoleType;

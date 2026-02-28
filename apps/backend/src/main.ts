@@ -28,7 +28,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: process.env.WS_CORS_ORIGIN || '*',
+    origin: process.env.WS_CORS_ORIGIN || ['https://72.56.112.248.nip.io', 'http://72.56.112.248', 'http://localhost:8080', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id', 'x-trace-id'],
     credentials: true,
