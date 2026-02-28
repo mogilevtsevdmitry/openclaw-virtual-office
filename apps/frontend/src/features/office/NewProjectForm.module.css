@@ -1,0 +1,202 @@
+/* ── Backdrop ─────────────────────────────────────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────── */
+.modal {
+  background: #1e1e2e;
+  border: 1px solid #45475a;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 360px;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  color: #cdd6f4;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #45475a;
+  background: #313244;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #89b4fa;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #6c7086;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.closeBtn:hover {
+  color: #cdd6f4;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────── */
+.body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.label {
+  font-size: 11px;
+  color: #a6adc8;
+  font-weight: 600;
+  margin-bottom: -4px;
+}
+
+.textarea {
+  width: 100%;
+  background: #313244;
+  border: 1px solid #45475a;
+  border-radius: 6px;
+  color: #cdd6f4;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  padding: 8px 10px;
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.textarea:focus {
+  border-color: #89b4fa;
+}
+
+.textarea::placeholder {
+  color: #6c7086;
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+}
+
+/* ── Radio group ─────────────────────────────────────────────────── */
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cdd6f4;
+  cursor: pointer;
+}
+
+.radio {
+  accent-color: #89b4fa;
+  cursor: pointer;
+}
+
+/* ── Error ───────────────────────────────────────────────────────── */
+.errorText {
+  font-size: 11px;
+  color: #f38ba8;
+  margin: 0;
+}
+
+/* ── Submit ──────────────────────────────────────────────────────── */
+.submitBtn {
+  margin-top: 4px;
+  padding: 8px;
+  background: rgba(137, 180, 250, 0.15);
+  border: 1px solid rgba(137, 180, 250, 0.4);
+  border-radius: 6px;
+  color: #89b4fa;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: rgba(137, 180, 250, 0.25);
+}
+
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Success state ───────────────────────────────────────────────── */
+.success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.successIcon {
+  font-size: 28px;
+}
+
+.successText {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #a6e3a1;
+}
+
+.projectId {
+  margin: 0;
+  font-size: 10px;
+  color: #a6adc8;
+  word-break: break-all;
+  text-align: center;
+}
+
+.runId {
+  margin: 0;
+  font-size: 10px;
+  color: #6c7086;
+}
+
+.doneBtn {
+  margin-top: 8px;
+  padding: 6px 20px;
+  background: rgba(166, 227, 161, 0.15);
+  border: 1px solid rgba(166, 227, 161, 0.3);
+  border-radius: 6px;
+  color: #a6e3a1;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.doneBtn:hover {
+  background: rgba(166, 227, 161, 0.25);
+}

@@ -1,0 +1,269 @@
+/* ── Pipeline Panel ──────────────────────────────────────────────── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface, #313244);
+  border: 1px solid #45475a;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text, #cdd6f4);
+  min-width: 0;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #45475a;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent, #89b4fa);
+  letter-spacing: 0.02em;
+}
+
+.summary {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #a6adc8;
+}
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.dotActive {
+  background: #a6e3a1;
+  box-shadow: 0 0 4px #a6e3a1;
+}
+
+.dotPending {
+  background: #f9e2af;
+}
+
+/* ── Runs list ───────────────────────────────────────────────────── */
+.runsList {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.runItem {
+  border-bottom: 1px solid #45475a;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.runItem:last-child {
+  border-bottom: none;
+}
+
+.runItem:hover {
+  background: #3b3c52;
+}
+
+.runHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 4px;
+  gap: 6px;
+}
+
+.runName {
+  font-size: 11px;
+  font-weight: 600;
+  color: #cdd6f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badgeACTIVE {
+  background: rgba(166, 227, 161, 0.15);
+  color: #a6e3a1;
+  border: 1px solid rgba(166, 227, 161, 0.3);
+}
+
+.badgePENDING {
+  background: rgba(249, 226, 175, 0.15);
+  color: #f9e2af;
+  border: 1px solid rgba(249, 226, 175, 0.3);
+}
+
+.badgeCOMPLETED {
+  background: rgba(166, 173, 200, 0.15);
+  color: #a6adc8;
+  border: 1px solid rgba(166, 173, 200, 0.2);
+}
+
+.badgeFAILED {
+  background: rgba(243, 139, 168, 0.15);
+  color: #f38ba8;
+  border: 1px solid rgba(243, 139, 168, 0.3);
+}
+
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 12px;
+}
+
+.progressBar {
+  flex: 1;
+  height: 4px;
+  background: #45475a;
+  border-radius: 2px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent, #89b4fa);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.progressText {
+  font-size: 10px;
+  color: #a6adc8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.currentStage {
+  padding: 2px 12px 8px;
+  font-size: 10px;
+  color: #a6adc8;
+}
+
+.arrow {
+  color: var(--accent, #89b4fa);
+  margin-right: 4px;
+}
+
+/* ── Expanded stages ─────────────────────────────────────────────── */
+.stagesExpanded {
+  padding: 4px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stageRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+
+.stageIcon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stageIconDone {
+  background: #a6e3a1;
+}
+
+.stageIconActive {
+  background: #89b4fa;
+  box-shadow: 0 0 5px #89b4fa;
+}
+
+.stageIconPending {
+  background: #45475a;
+}
+
+.stageIconFailed {
+  background: #f38ba8;
+}
+
+.stageName {
+  flex: 1;
+  color: #cdd6f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stageAgent {
+  color: #6c7086;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.footer {
+  padding: 8px 12px;
+  border-top: 1px solid #45475a;
+  flex-shrink: 0;
+}
+
+.newProjectBtn {
+  width: 100%;
+  padding: 6px 0;
+  background: rgba(137, 180, 250, 0.1);
+  border: 1px solid rgba(137, 180, 250, 0.3);
+  border-radius: 6px;
+  color: var(--accent, #89b4fa);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.newProjectBtn:hover {
+  background: rgba(137, 180, 250, 0.18);
+  border-color: rgba(137, 180, 250, 0.5);
+}
+
+/* ── Empty state ─────────────────────────────────────────────────── */
+.empty {
+  padding: 20px 12px;
+  text-align: center;
+  color: #6c7086;
+  font-size: 11px;
+}
+
+/* ── Loading / error ─────────────────────────────────────────────── */
+.loadingText {
+  padding: 12px;
+  text-align: center;
+  color: #6c7086;
+  font-size: 11px;
+}

@@ -20,6 +20,12 @@ import {
   ProjectDetailDto,
   ArtifactSummaryDto,
 } from './dto/project-response.dto';
+import {
+  BootstrapDto,
+  BootstrapResponseDto,
+  StageListItemDto,
+  SystemStatusDto,
+} from './dto/bootstrap.dto';
 
 // Stage definition from PipelineTemplate.stages JSON array
 interface StageDefinition {
@@ -454,5 +460,240 @@ export class PipelineService {
         createdAt: newArtifact.createdAt,
       };
     }
+  }
+
+  // ─── POST /api/v1/bootstrap ───────────────────────────────────────
+  async bootstrap(dto: BootstrapDto): Promise<BootstrapResponseDto> {
+    const requestedBy = dto.requestedBy ?? 'main';
+
+    // 1. Определить название проекта из идеи (первые 60 символов)
+    const name = dto.idea.slice(0, 60).trim();
+
+    // 2. Создать project + run + stages через createProject
+    const projectData = await this.createProject({
+      name,
+      type: dto.type,
+      description: dto.idea,
+    });
+
+    const { projectId, runId, stages } = projectData;
+
+    // 3. Определить первую стадию
+    // TELEGRAM_BOT → первая стадия IDEA, WEB_APP → DISCOVERY
+    // Но берём из реального списка стадий (первая по порядку)
+    const firstStage = stages.sort((a, b) => a.stageOrder - b.stageOrder)[0];
+    if (!firstStage) {
+      throw new BadRequestException('No stages found in pipeline template');
+    }
+
+    const now = new Date();
+
+    // 4. Активировать первую стадию
+    await this.prisma.$transaction([
+      this.prisma.pipelineStage.update({
+        where: { runId_stageName: { runId, stageName: firstStage.stageName } },
+        data: {
+          status: StageStatus.ACTIVE,
+          startedAt: now,
+        },
+      }),
+      this.prisma.pipelineRun.update({
+        where: { id: runId },
+        data: {
+          status: PipelineStatus.RUNNING,
+          currentStage: firstStage.stageName,
+          startedAt: now,
+        },
+      }),
+      this.prisma.project.update({
+        where: { id: projectId },
+        data: { status: PipelineStatus.RUNNING },
+      }),
+    ]);
+
+    // 5. Записать в outbox событие 'project.Pipeline.Bootstrapped'
+    const outboxEventId = randomUUID();
+    await this.prisma.outbox.create({
+      data: {
+        id: randomUUID(),
+        eventId: outboxEventId,
+        eventType: 'project.Pipeline.Bootstrapped',
+        aggregateId: projectId,
+        tenantId: TENANT_ID,
+        payload: {
+          projectId,
+          runId,
+          type: dto.type,
+          idea: dto.idea,
+          firstStage: firstStage.stageName,
+          ownerAgent: firstStage.ownerAgent,
+          requestedBy,
+        },
+        processed: false,
+        createdAt: now,
+      },
+    });
+
+    // 6. Обновить статус первой стадии в ответе
+    const updatedStages = stages.map((s) =>
+      s.stageName === firstStage.stageName
+        ? { ...s, status: StageStatus.ACTIVE }
+        : s,
+    );
+
+    // 7. Сгенерировать techLeadBrief
+    const techLeadBrief = this.generateTechLeadBrief({
+      idea: dto.idea,
+      type: dto.type,
+      projectId,
+      runId,
+      stageName: firstStage.stageName,
+      ownerAgent: firstStage.ownerAgent,
+    });
+
+    return {
+      projectId,
+      runId,
+      type: dto.type,
+      name,
+      stages: updatedStages,
+      techLeadBrief,
+      outboxEventId,
+    };
+  }
+
+  /** Генерирует текстовый бриф для Tech Lead */
+  private generateTechLeadBrief(params: {
+    idea: string;
+    type: ProjectType;
+    projectId: string;
+    runId: string;
+    stageName: string;
+    ownerAgent: string;
+  }): string {
+    const { idea, type, projectId, runId, stageName, ownerAgent } = params;
+    return [
+      '=== НОВЫЙ ПРОЕКТ ЗАПУЩЕН ===',
+      `Идея: ${idea}`,
+      `Тип: ${type}`,
+      `Project ID: ${projectId}`,
+      `Run ID: ${runId}`,
+      '',
+      `Первая стадия: ${stageName} → агент: ${ownerAgent}`,
+      'Статус: ACTIVE',
+      '',
+      'Твои действия:',
+      `1. Проверь стадии: GET /api/v1/projects/${projectId}`,
+      `2. Свяжись с BA (агент 'ba') — передай идею, жди PRD артефакт`,
+      `3. Отслеживай прогресс через GET /api/v1/projects/${runId}/stages`,
+      '4. Gate check перед каждым переходом стадии',
+      '',
+      '=== КОНЕЦ БРИФА ===',
+    ].join('\n');
+  }
+
+  // ─── GET /api/v1/projects/:runId/stages ──────────────────────────
+  async getStages(runId: string): Promise<StageListItemDto[]> {
+    const run = await this.prisma.pipelineRun.findFirst({
+      where: { id: runId, tenantId: TENANT_ID },
+    });
+
+    if (!run) {
+      throw new NotFoundException(`PipelineRun "${runId}" not found`);
+    }
+
+    const stages = await this.prisma.pipelineStage.findMany({
+      where: { runId, tenantId: TENANT_ID },
+      orderBy: { stageOrder: 'asc' },
+    });
+
+    return stages.map((s) => ({
+      stageName: s.stageName,
+      stageOrder: s.stageOrder,
+      status: s.status,
+      ownerAgent: s.ownerAgent,
+      startedAt: s.startedAt,
+      completedAt: s.completedAt,
+    }));
+  }
+
+  // ─── GET /api/v1/pipeline/status ─────────────────────────────────
+  async getSystemStatus(): Promise<SystemStatusDto> {
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const [activeCount, pendingCount, completedTodayCount, recentRuns] =
+      await Promise.all([
+        // Active projects
+        this.prisma.project.count({
+          where: { tenantId: TENANT_ID, status: PipelineStatus.RUNNING },
+        }),
+        // Pending projects
+        this.prisma.project.count({
+          where: { tenantId: TENANT_ID, status: PipelineStatus.PENDING },
+        }),
+        // Completed today
+        this.prisma.project.count({
+          where: {
+            tenantId: TENANT_ID,
+            status: PipelineStatus.COMPLETED,
+            updatedAt: { gte: startOfDay },
+          },
+        }),
+        // Recent runs (last 10)
+        this.prisma.project.findMany({
+          where: { tenantId: TENANT_ID },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            status: true,
+            runs: {
+              orderBy: { startedAt: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                currentStage: true,
+                stages: {
+                  select: { status: true },
+                },
+              },
+            },
+          },
+        }),
+      ]);
+
+    const recentRunDtos = recentRuns.map((p) => {
+      const latestRun = p.runs[0];
+      const totalStages = latestRun?.stages.length ?? 0;
+      const terminalStageStatuses: string[] = [
+        StageStatus.COMPLETED,
+        StageStatus.APPROVED,
+        StageStatus.SKIPPED,
+      ];
+      const completedStages =
+        latestRun?.stages.filter((s) =>
+          terminalStageStatuses.includes(s.status),
+        ).length ?? 0;
+
+      return {
+        projectId: p.id,
+        name: p.name,
+        type: p.type,
+        status: p.status,
+        currentStage: latestRun?.currentStage ?? null,
+        progress: `${completedStages}/${totalStages}`,
+      };
+    });
+
+    return {
+      activeProjects: activeCount,
+      pendingProjects: pendingCount,
+      completedToday: completedTodayCount,
+      recentRuns: recentRunDtos,
+    };
   }
 }
