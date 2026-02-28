@@ -9,6 +9,9 @@ import { apiClient } from '@shared/api'
 import { AgentsPanel } from './AgentsPanel'
 import { TasksPanel } from '../tasks/TasksPanel'
 import { TokenWidget } from './TokenWidget'
+import { PipelinePanel } from './PipelinePanel'
+import { NewProjectForm } from './NewProjectForm'
+import { AgentCard } from './AgentCard'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import taskStyles from '../tasks/TasksPanel.module.css'
 import styles from './OfficeApp.module.css'
@@ -22,6 +25,13 @@ interface OpenClawAgent {
   role: string
   isDefault: boolean
   officeRole: 'DIRECTOR' | 'BACKEND' | 'FINANCIER' | 'FRONTEND' | 'DEVOPS'
+}
+
+interface AgentClickData {
+  agentId: string
+  name: string
+  role: string
+  presenceState: string
 }
 
 // ─── Phaser sync ──────────────────────────────────────────────────────────────
@@ -144,8 +154,22 @@ export function OfficeApp() {
   const [status, setStatus] = useState<'loading' | 'bootstrapping' | 'ready' | 'error'>('loading')
   const [tasksOpen, setTasksOpen] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [newProjectOpen, setNewProjectOpen] = useState(false)
+  const [pipelineKey, setPipelineKey] = useState(0)
+  const [clickedAgent, setClickedAgent] = useState<AgentClickData | null>(null)
 
   const isMobile = useMediaQuery('(max-width: 768px)')
+
+  // ── Listen for agent:click from Phaser ──
+  useEffect(() => {
+    const handler = (data: AgentClickData) => {
+      setClickedAgent(data)
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(eventBridge as any).on('agent:click', handler)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return () => { (eventBridge as any).off('agent:click', handler) }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -216,6 +240,13 @@ export function OfficeApp() {
     return <Splash text="Ошибка подключения к серверу. Обновите страницу." />
   }
 
+  const pipelinePanel = (
+    <PipelinePanel
+      key={pipelineKey}
+      onNewProject={() => setNewProjectOpen(true)}
+    />
+  )
+
   return (
     <div className={styles.layout}>
       {/* Left sidebar — desktop only */}
@@ -247,6 +278,13 @@ export function OfficeApp() {
         )}
       </main>
 
+      {/* Right sidebar — Pipeline Panel, desktop only */}
+      {!isMobile && (
+        <div className={styles.rightSidebar}>
+          {pipelinePanel}
+        </div>
+      )}
+
       {/* Tasks Panel — modal on desktop, drawer on mobile */}
       {isMobile ? (
         <>
@@ -263,6 +301,10 @@ export function OfficeApp() {
             </div>
             <div className={styles.drawerContent}>
               <AgentsPanel />
+              {/* Pipeline in mobile drawer */}
+              <div className={styles.drawerPipeline}>
+                {pipelinePanel}
+              </div>
               <button
                 className={taskStyles.tasksButton}
                 onClick={() => {
@@ -279,6 +321,22 @@ export function OfficeApp() {
 
       {/* Tasks Modal */}
       {tasksOpen && <TasksPanel onClose={() => setTasksOpen(false)} />}
+
+      {/* New Project Form */}
+      {newProjectOpen && (
+        <NewProjectForm
+          onClose={() => setNewProjectOpen(false)}
+          onCreated={() => setPipelineKey((k) => k + 1)}
+        />
+      )}
+
+      {/* Agent Card Modal */}
+      {clickedAgent && (
+        <AgentCard
+          agent={clickedAgent}
+          onClose={() => setClickedAgent(null)}
+        />
+      )}
 
       {/* Token Widget */}
       <TokenWidget />

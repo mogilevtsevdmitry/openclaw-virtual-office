@@ -1,0 +1,162 @@
+/* ── Backdrop ─────────────────────────────────────────────────────── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────── */
+.modal {
+  background: #1e1e2e;
+  border: 1px solid #45475a;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 380px;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  color: #cdd6f4;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #45475a;
+  background: #313244;
+  gap: 8px;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.agentName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #89b4fa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agentRole {
+  font-size: 11px;
+  color: #a6adc8;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: #6c7086;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.closeBtn:hover {
+  color: #cdd6f4;
+}
+
+/* ── Section ─────────────────────────────────────────────────────── */
+.section {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-bottom: 1px solid #45475a;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 10px;
+  font-weight: 700;
+  color: #6c7086;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+/* ── Info rows ───────────────────────────────────────────────────── */
+.infoRow {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.infoKey {
+  color: #6c7086;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.infoValue {
+  color: #cdd6f4;
+  word-break: break-word;
+}
+
+/* ── Status dot ──────────────────────────────────────────────────── */
+.statusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.statusWORKING {
+  background: #a6e3a1;
+  box-shadow: 0 0 5px #a6e3a1;
+}
+
+.statusIDLE {
+  background: #f9e2af;
+}
+
+.statusOFFLINE {
+  background: #6c7086;
+}
+
+/* ── Activity log ────────────────────────────────────────────────── */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityItem {
+  font-size: 10px;
+  color: #a6adc8;
+  display: flex;
+  gap: 6px;
+}
+
+.activityTime {
+  color: #6c7086;
+  flex-shrink: 0;
+}
+
+/* ── Loading / error ─────────────────────────────────────────────── */
+.loadingText {
+  padding: 16px;
+  text-align: center;
+  color: #6c7086;
+  font-size: 11px;
+}

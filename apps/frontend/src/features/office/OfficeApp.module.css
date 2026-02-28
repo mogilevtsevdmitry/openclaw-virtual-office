@@ -47,7 +47,24 @@
 
 /* ── Right sidebar ────────────────────────────────────────────────── */
 .rightSidebar {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  min-width: 180px;
+  max-width: 260px;
   flex-shrink: 0;
+  border-left: 1px solid #45475a;
+  overflow: hidden;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+/* ── Pipeline in drawer (mobile) ─────────────────────────────────── */
+.drawerPipeline {
+  padding: 8px 0;
+  border-top: 1px solid #2a2b3e;
+  border-bottom: 1px solid #2a2b3e;
+  margin: 4px 0;
 }
 
 /* ── Hamburger button ─────────────────────────────────────────────── */

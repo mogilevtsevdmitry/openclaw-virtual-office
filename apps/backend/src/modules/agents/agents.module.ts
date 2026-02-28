@@ -7,7 +7,6 @@ import { AGENT_REPOSITORY } from './domain/agent.repository.interface';
 import { AgentHiredPolicy } from './application/policies/agent-hired.policy';
 import { OfficeModule } from '../office/office.module';
 import { OutboxService } from '../../../../../libs/shared-kernel/src/infrastructure/outbox.service';
-
 @Module({
   imports: [OfficeModule],
   controllers: [AgentsController],
