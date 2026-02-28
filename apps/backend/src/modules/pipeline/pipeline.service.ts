@@ -261,30 +261,51 @@ export class PipelineService {
       updateData.completedAt = now;
     }
 
-    const [updatedStage] = await this.prisma.$transaction([
-      this.prisma.pipelineStage.update({
-        where: { runId_stageName: { runId, stageName } },
-        data: updateData,
-      }),
-      this.prisma.outbox.create({
-        data: {
-          id: randomUUID(),
-          eventId: randomUUID(),
-          eventType: 'project.PipelineRun.StageTransitioned',
-          aggregateId: runId,
-          tenantId: TENANT_ID,
-          payload: {
-            runId,
-            stageName,
-            fromStatus: stage.status,
-            toStatus: dto.status,
-            transitionedAt: now.toISOString(),
-          },
-          processed: false,
-          createdAt: now,
+    const stageUpdate = this.prisma.pipelineStage.update({
+      where: { runId_stageName: { runId, stageName } },
+      data: updateData,
+    });
+
+    const outboxWrite = this.prisma.outbox.create({
+      data: {
+        id: randomUUID(),
+        eventId: randomUUID(),
+        eventType: 'project.PipelineRun.StageTransitioned',
+        aggregateId: runId,
+        tenantId: TENANT_ID,
+        payload: {
+          runId,
+          stageName,
+          fromStatus: stage.status,
+          toStatus: dto.status,
+          transitionedAt: now.toISOString(),
         },
-      }),
-    ]);
+        processed: false,
+        createdAt: now,
+      },
+    });
+
+    // Update currentStage on run when a stage becomes ACTIVE
+    if (dto.status === StageStatus.ACTIVE) {
+      const [updatedStage] = await this.prisma.$transaction([
+        stageUpdate,
+        outboxWrite,
+        this.prisma.pipelineRun.update({
+          where: { id: runId },
+          data: { currentStage: stageName, status: PipelineStatus.RUNNING },
+        }),
+      ]);
+      return {
+        stageName: updatedStage.stageName,
+        stageOrder: updatedStage.stageOrder,
+        status: updatedStage.status,
+        ownerAgent: updatedStage.ownerAgent,
+        startedAt: updatedStage.startedAt,
+        completedAt: updatedStage.completedAt,
+      };
+    }
+
+    const [updatedStage] = await this.prisma.$transaction([stageUpdate, outboxWrite]);
 
     // Auto-complete run if all stages are done
     if (
@@ -641,7 +662,7 @@ export class PipelineService {
             updatedAt: { gte: startOfDay },
           },
         }),
-        // Recent runs (last 10)
+        // Recent runs (last 10) — include full stage list for live status
         this.prisma.project.findMany({
           where: { tenantId: TENANT_ID },
           orderBy: { createdAt: 'desc' },
@@ -656,9 +677,15 @@ export class PipelineService {
               take: 1,
               select: {
                 id: true,
-                currentStage: true,
+                status: true,
                 stages: {
-                  select: { status: true },
+                  orderBy: { stageOrder: 'asc' },
+                  select: {
+                    stageName: true,
+                    status: true,
+                    ownerAgent: true,
+                    stageOrder: true,
+                  },
                 },
               },
             },
@@ -666,26 +693,43 @@ export class PipelineService {
         }),
       ]);
 
+    const terminalStageStatuses: string[] = [
+      StageStatus.COMPLETED,
+      StageStatus.APPROVED,
+      StageStatus.SKIPPED,
+    ];
+
     const recentRunDtos = recentRuns.map((p) => {
       const latestRun = p.runs[0];
       const totalStages = latestRun?.stages.length ?? 0;
-      const terminalStageStatuses: string[] = [
-        StageStatus.COMPLETED,
-        StageStatus.APPROVED,
-        StageStatus.SKIPPED,
-      ];
       const completedStages =
         latestRun?.stages.filter((s) =>
           terminalStageStatuses.includes(s.status),
         ).length ?? 0;
 
+      // Determine current active stage (first ACTIVE, else first PENDING)
+      const activeStage = latestRun?.stages.find((s) => s.status === StageStatus.ACTIVE);
+      const pendingStage = latestRun?.stages.find(
+        (s) => s.status === StageStatus.PENDING,
+      );
+      const currentStage = activeStage?.stageName ?? pendingStage?.stageName ?? null;
+
+      // Use run status as project status for accuracy
+      const effectiveStatus = latestRun?.status ?? p.status;
+
       return {
         projectId: p.id,
+        runId: latestRun?.id ?? null,
         name: p.name,
         type: p.type,
-        status: p.status,
-        currentStage: latestRun?.currentStage ?? null,
+        status: effectiveStatus,
+        currentStage,
         progress: `${completedStages}/${totalStages}`,
+        stages: latestRun?.stages.map((s) => ({
+          stageName: s.stageName,
+          status: s.status,
+          ownerAgent: s.ownerAgent,
+        })) ?? [],
       };
     });
 
