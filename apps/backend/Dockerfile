@@ -7,9 +7,11 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-# Copy only package files for layer caching
-COPY apps/backend/package*.json ./apps/backend/
-RUN cd apps/backend && npm ci --omit=dev
+# Copy monorepo root package files (lock lives at root for workspaces)
+COPY package.json package-lock.json ./
+COPY apps/backend/package.json ./apps/backend/
+COPY libs/ ./libs/
+RUN npm ci --omit=dev --workspace=apps/backend --ignore-scripts
 
 # ── Stage 2: build ───────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
@@ -17,8 +19,10 @@ WORKDIR /app
 
 RUN apk add --no-cache openssl
 
-COPY apps/backend/package*.json ./apps/backend/
-RUN cd apps/backend && npm ci
+COPY package.json package-lock.json ./
+COPY apps/backend/package.json ./apps/backend/
+COPY libs/ ./libs/
+RUN npm ci --workspace=apps/backend --ignore-scripts
 
 # Copy full backend source + shared libs (needed for TypeScript path aliases)
 COPY apps/backend/ ./apps/backend/
