@@ -15,6 +15,7 @@ import { CommunicationModule } from './modules/communication/communication.modul
 import { AuditModule } from './modules/audit/audit.module';
 import { OpenClawModule } from './modules/openclaw/openclaw.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { PipelineModule } from './modules/pipeline/pipeline.module';
 import { RequestContextMiddleware } from './logging/request-context.middleware';
 import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
 
@@ -54,6 +55,7 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
     AuditModule,      // Audit log + cleanup cron
     OpenClawModule,   // OpenClaw system agents roster
     TasksModule,      // Task management
+    PipelineModule,   // Pipeline BC: projects, runs, stages, artifacts
   ],
   providers: [
     // Global JWT guard (bypass with @Public() decorator)
