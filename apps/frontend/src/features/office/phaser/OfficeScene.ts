@@ -1191,11 +1191,13 @@ export class OfficeScene extends Phaser.Scene {
     let deskY: number
 
     if (a.role === 'DIRECTOR') {
-      // Friday always in her office
-      spawnX = 1150
-      spawnY = 420
-      deskX = 1130
-      deskY = 400
+      // Friday sits in her leather chair behind the desk
+      // Desk: ox = z.x+60 = 1060, oy = z.y+80 = 120
+      // Chair center: ox+100+30=1190, oy+90+25=235
+      spawnX = 1190
+      spawnY = 235
+      deskX = 1190
+      deskY = 235
     } else if (a.role === 'ARCHIVIST') {
       // Archivist in their zone
       spawnX = 700
