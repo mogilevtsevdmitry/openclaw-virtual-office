@@ -17,6 +17,9 @@ export interface AgentEntry {
   presenceState: PresenceState
   zoneId: string | null
   deskId: string | null
+  // Pipeline context — populated from /api/v1/pipeline/status
+  currentTask: string | null        // e.g. "ARCHITECTURE" — active pipeline stage
+  currentProject: string | null     // e.g. "Chronos"
 }
 
 export interface DeskEntry {
@@ -47,6 +50,9 @@ export interface ChatMessage {
   postedAt: string
 }
 
+// Maps openclaw agentId → active stage name + project name (from pipeline)
+export type PipelineAgentMap = Record<string, { stage: string; project: string }>
+
 interface OfficeState {
   agents: Record<string, AgentEntry>
   desks: Record<string, DeskEntry>
@@ -61,6 +67,8 @@ interface OfficeState {
   applyMessagePosted: (payload: MessagePostedPayload, eventId: string) => void
   applyZoneCreated: (payload: ZoneCreatedPayload, eventId: string) => void
   setLastEventId: (eventId: string) => void
+  // Updates currentTask/currentProject for agents that own an ACTIVE pipeline stage
+  applyPipelineStages: (agentTaskMap: PipelineAgentMap) => void
 }
 
 const LS_LAST_EVENT_KEY = 'office_last_event_id'
@@ -84,6 +92,8 @@ export const useOfficeStore = create<OfficeState>()((set) => ({
           presenceState: 'IDLE',
           zoneId: null,
           deskId: null,
+          currentTask: null,
+          currentProject: null,
         },
       },
       lastEventId: eventId,
@@ -172,4 +182,20 @@ export const useOfficeStore = create<OfficeState>()((set) => ({
     localStorage.setItem(LS_LAST_EVENT_KEY, eventId)
     set({ lastEventId: eventId })
   },
+
+  applyPipelineStages: (agentTaskMap) =>
+    set((s) => {
+      const updated: Record<string, AgentEntry> = {}
+      // First clear all currentTask (stage may have finished)
+      for (const [id, agent] of Object.entries(s.agents)) {
+        updated[id] = { ...agent, currentTask: null, currentProject: null }
+      }
+      // Then apply active stages
+      for (const [agentId, { stage, project }] of Object.entries(agentTaskMap)) {
+        if (updated[agentId]) {
+          updated[agentId] = { ...updated[agentId], currentTask: stage, currentProject: project }
+        }
+      }
+      return { agents: updated }
+    }),
 }))

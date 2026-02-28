@@ -1,6 +1,20 @@
 import { useState, useEffect, useCallback } from 'react'
 import { apiClient } from '@shared/api'
+import { useOfficeStore, type PipelineAgentMap } from './officeStore'
 import styles from './PipelinePanel.module.css'
+
+// Maps ownerAgent (openclaw agentId) → active stage label
+const STAGE_LABELS: Record<string, string> = {
+  IDEA: 'Пишет PRD',
+  DISCOVERY: 'Исследует рынок',
+  ARCHITECTURE: 'Проектирует архитектуру',
+  PLANNING: 'Планирует спринт',
+  BUILD: 'Пишет код',
+  QA: 'Тестирует',
+  SECURITY_GATE: 'Аудит безопасности',
+  DEPLOY: 'Деплоит',
+  PRODUCTION: 'Финальная проверка',
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -126,16 +140,32 @@ interface PipelinePanelProps {
 export function PipelinePanel({ onNewProject }: PipelinePanelProps) {
   const [data, setData] = useState<PipelineStatus | null>(null)
   const [error, setError] = useState(false)
+  const applyPipelineStages = useOfficeStore((s) => s.applyPipelineStages)
 
   const fetchStatus = useCallback(async () => {
     try {
       const res = await apiClient.get<PipelineStatus>('/pipeline/status')
       setData(res.data)
       setError(false)
+
+      // Build agentId → { stage, project } map from ACTIVE stages across all RUNNING runs
+      const agentTaskMap: PipelineAgentMap = {}
+      for (const run of res.data.recentRuns) {
+        if (run.status !== 'RUNNING' && run.status !== 'ACTIVE') continue
+        for (const stage of run.stages) {
+          if (stage.status === 'ACTIVE') {
+            agentTaskMap[stage.ownerAgent] = {
+              stage: STAGE_LABELS[stage.stageName] ?? stage.stageName,
+              project: run.name,
+            }
+          }
+        }
+      }
+      applyPipelineStages(agentTaskMap)
     } catch {
       setError(true)
     }
-  }, [])
+  }, [applyPipelineStages])
 
   useEffect(() => {
     fetchStatus()

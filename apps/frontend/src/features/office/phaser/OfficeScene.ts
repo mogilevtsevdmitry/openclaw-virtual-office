@@ -101,6 +101,9 @@ interface AgentState {
   currentAnim: string
   workingComputer: Phaser.GameObjects.Image | null
   bubbleScheduleTimer: Phaser.Time.TimerEvent | null
+  // Pipeline context — populated from officeStore via agent:update
+  currentTask: string | null
+  currentProject: string | null
 }
 
 // ─── Scene ────────────────────────────────────────────────────────────────────
@@ -1283,6 +1286,8 @@ export class OfficeScene extends Phaser.Scene {
       currentAnim: `${charKey}-idle`,
       workingComputer: null,
       bubbleScheduleTimer: null,
+      currentTask: a.currentTask ?? null,
+      currentProject: a.currentProject ?? null,
     }
 
     this.agents.set(a.agentId, state)
@@ -1316,6 +1321,17 @@ export class OfficeScene extends Phaser.Scene {
     if (!state) return
     if (state.presenceState !== a.presenceState) {
       this.onAgentPresenceChanged(agentId, a.presenceState)
+    }
+    // Update pipeline context — show task in bubble on next schedule tick
+    const prevTask = state.currentTask
+    state.currentTask = a.currentTask ?? null
+    state.currentProject = a.currentProject ?? null
+    // If agent just got a task — immediately show it in a bubble
+    if (!prevTask && state.currentTask && state.presenceState === 'WORKING') {
+      const taskText = state.currentProject
+        ? `${state.currentTask}\n${state.currentProject}`
+        : state.currentTask
+      this.showBubble(agentId, taskText)
     }
   }
 
@@ -1636,9 +1652,17 @@ export class OfficeScene extends Phaser.Scene {
       const s = this.agents.get(agentId)
       if (!s) return
 
-      const phrases = AGENT_PHRASES[s.presenceState] ?? AGENT_PHRASES.IDLE
-      const phrase = Phaser.Utils.Array.GetRandom(phrases)
-      if (phrase) this.showBubble(agentId, phrase)
+      // If agent has an active pipeline task — show it (50% chance) or random phrase
+      if (s.currentTask && s.presenceState === 'WORKING' && Math.random() < 0.5) {
+        const taskText = s.currentProject
+          ? `${s.currentTask}\n${s.currentProject}`
+          : s.currentTask
+        this.showBubble(agentId, taskText)
+      } else {
+        const phrases = AGENT_PHRASES[s.presenceState] ?? AGENT_PHRASES.IDLE
+        const phrase = Phaser.Utils.Array.GetRandom(phrases)
+        if (phrase) this.showBubble(agentId, phrase)
+      }
 
       this.scheduleBubble(agentId)
     })

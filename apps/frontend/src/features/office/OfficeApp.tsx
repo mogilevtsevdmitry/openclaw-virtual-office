@@ -47,12 +47,21 @@ function usePhaserSync() {
     Object.values(agents).forEach((agent) => {
       if (!prevAgents[agent.agentId]) {
         eventBridge.emit('agent:added', agent)
-      } else if (prevAgents[agent.agentId].presenceState !== agent.presenceState) {
-        eventBridge.emit('agent:moved', {
-          agentId: agent.agentId,
-          zoneId: agent.zoneId ?? '',
-          presenceState: agent.presenceState,
-        })
+      } else {
+        const prev = prevAgents[agent.agentId]
+        const presenceChanged = prev.presenceState !== agent.presenceState
+        const taskChanged = prev.currentTask !== agent.currentTask
+        if (presenceChanged) {
+          eventBridge.emit('agent:moved', {
+            agentId: agent.agentId,
+            zoneId: agent.zoneId ?? '',
+            presenceState: agent.presenceState,
+          })
+        }
+        // If pipeline task changed — send full agent update so OfficeScene picks up currentTask
+        if (taskChanged) {
+          eventBridge.emit('agent:update', [agent])
+        }
       }
     })
     prevAgentsRef.current = agents
