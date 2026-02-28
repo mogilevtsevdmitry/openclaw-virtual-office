@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { PipelineOrchestratorService } from './pipeline-orchestrator.service';
 import {
   ProjectType,
   StageStatus,
@@ -40,7 +41,10 @@ const CREATED_BY = 'main';
 
 @Injectable()
 export class PipelineService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly orchestrator: PipelineOrchestratorService,
+  ) {}
 
   // ─── POST /api/v1/projects ────────────────────────────────────────
   async createProject(dto: CreateProjectDto): Promise<CreateProjectResponseDto> {
@@ -307,10 +311,11 @@ export class PipelineService {
 
     const [updatedStage] = await this.prisma.$transaction([stageUpdate, outboxWrite]);
 
-    // Auto-complete run if all stages are done
+    // Auto-complete run if all stages are done; otherwise advance to next stage
     if (
       dto.status === StageStatus.COMPLETED ||
-      dto.status === StageStatus.APPROVED
+      dto.status === StageStatus.APPROVED ||
+      dto.status === StageStatus.SKIPPED
     ) {
       const allStages = await this.prisma.pipelineStage.findMany({
         where: { runId },
@@ -329,6 +334,9 @@ export class PipelineService {
           where: { id: runId },
           data: { status: PipelineStatus.COMPLETED, completedAt: now },
         });
+      } else {
+        // 🚀 Event-driven: advance pipeline immediately — no cron wait
+        this.orchestrator.advanceAfterComplete(runId, stageName);
       }
     }
 
