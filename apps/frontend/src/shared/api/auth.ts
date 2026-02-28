@@ -1,10 +1,16 @@
 import { apiClient } from './client'
 
-interface AuthResponse {
+export interface AuthResponse {
   accessToken: string
-  refreshToken?: string  // опционально: бэкенд отдаёт через httpOnly cookie
+  refreshToken: string
+  expiresIn: number   // seconds (300 = 5 min)
   tenantId: string
   userId: string
+}
+
+export interface RefreshResponse {
+  accessToken: string
+  refreshToken: string
 }
 
 interface LoginDto {
@@ -27,6 +33,6 @@ export const authApi = {
 
   refresh: (refreshToken: string) =>
     apiClient
-      .post<{ accessToken: string }>('/auth/refresh', { refreshToken })
+      .post<RefreshResponse>('/auth/refresh', { refreshToken })
       .then((r) => r.data),
 }

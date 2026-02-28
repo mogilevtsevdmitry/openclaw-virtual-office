@@ -20,7 +20,7 @@ export function LoginForm() {
 
     try {
       const data = await authApi.login({ email, password })
-      setAuth(data.accessToken, data.refreshToken ?? '', data.tenantId, data.userId)
+      setAuth(data.accessToken, data.refreshToken, data.tenantId, data.userId, data.expiresIn)
       navigate('/office')
     } catch {
       setError('Неверный логин или пароль')

@@ -66,7 +66,7 @@ export class RefreshTokenUseCase {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '15m',
+      expiresIn: '5m',
     });
 
     const newRefreshToken = crypto.randomBytes(64).toString('hex');

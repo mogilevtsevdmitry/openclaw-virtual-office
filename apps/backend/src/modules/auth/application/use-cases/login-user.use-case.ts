@@ -44,7 +44,7 @@ export class LoginUserUseCase {
 
     const accessToken = this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: '15m',
+      expiresIn: '5m',
     });
 
     const refreshToken = crypto.randomBytes(64).toString('hex');
