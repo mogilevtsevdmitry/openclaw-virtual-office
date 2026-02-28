@@ -280,6 +280,31 @@ export class PipelineService {
       }),
     ]);
 
+    // Auto-complete run if all stages are done
+    if (
+      dto.status === StageStatus.COMPLETED ||
+      dto.status === StageStatus.APPROVED
+    ) {
+      const allStages = await this.prisma.pipelineStage.findMany({
+        where: { runId },
+        select: { status: true },
+      });
+      const terminalStatuses = [
+        StageStatus.COMPLETED,
+        StageStatus.APPROVED,
+        StageStatus.SKIPPED,
+      ];
+      const allDone = allStages.every((s) =>
+        terminalStatuses.includes(s.status as (typeof terminalStatuses)[number]),
+      );
+      if (allDone) {
+        await this.prisma.pipelineRun.update({
+          where: { id: runId },
+          data: { status: PipelineStatus.COMPLETED, completedAt: now },
+        });
+      }
+    }
+
     return {
       stageName: updatedStage.stageName,
       stageOrder: updatedStage.stageOrder,
