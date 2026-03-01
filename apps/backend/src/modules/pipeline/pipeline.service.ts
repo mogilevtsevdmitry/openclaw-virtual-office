@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { PipelineOrchestratorService } from './pipeline-orchestrator.service';
@@ -41,6 +42,8 @@ const CREATED_BY = 'main';
 
 @Injectable()
 export class PipelineService {
+  private readonly logger = new Logger(PipelineService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly orchestrator: PipelineOrchestratorService,
@@ -48,23 +51,36 @@ export class PipelineService {
 
   // ─── POST /api/v1/projects ────────────────────────────────────────
   async createProject(dto: CreateProjectDto): Promise<CreateProjectResponseDto> {
-    // 1. Load PipelineTemplate by type
-    const template = await this.prisma.pipelineTemplate.findFirst({
-      where: { type: dto.type },
-    });
+    // 1. Resolve stages: from dto.stages (dynamic) or from template (fallback)
+    let stages: StageDefinition[];
 
-    if (!template) {
-      throw new NotFoundException(
-        `PipelineTemplate for type "${dto.type}" not found`,
-      );
-    }
+    if (dto.stages && dto.stages.length > 0) {
+      // Dynamic pipeline — stages defined by caller (BA / bootstrap)
+      stages = dto.stages.map((s, i) => ({
+        name: s.name,
+        order: s.order ?? i + 1,
+        owner: s.owner,
+        outputs: [],
+      }));
+    } else {
+      // Fallback: load template by type
+      const template = await this.prisma.pipelineTemplate.findFirst({
+        where: { type: dto.type },
+      });
 
-    const stages = template.stages as unknown as StageDefinition[];
+      if (!template) {
+        throw new NotFoundException(
+          `PipelineTemplate for type "${dto.type}" not found. Either pass explicit stages[] or use a known type.`,
+        );
+      }
 
-    if (!Array.isArray(stages)) {
-      throw new BadRequestException(
-        `Template stages for type "${dto.type}" is not a valid array`,
-      );
+      stages = template.stages as unknown as StageDefinition[];
+
+      if (!Array.isArray(stages)) {
+        throw new BadRequestException(
+          `Template stages for type "${dto.type}" is not a valid array`,
+        );
+      }
     }
 
     const projectId = randomUUID();
@@ -495,14 +511,18 @@ export class PipelineService {
   async bootstrap(dto: BootstrapDto): Promise<BootstrapResponseDto> {
     const requestedBy = dto.requestedBy ?? 'main';
 
+    this.logger.log(`Bootstrap: type=${dto.type}, custom_stages=${dto.stages?.length ?? 'none (using template)'}`);
+
     // 1. Определить название проекта из идеи (первые 60 символов)
     const name = dto.idea.slice(0, 60).trim();
 
     // 2. Создать project + run + stages через createProject
+    // Если переданы явные стадии — используем их, иначе шаблон по type
     const projectData = await this.createProject({
       name,
       type: dto.type,
       description: dto.idea,
+      stages: dto.stages,
     });
 
     const { projectId, runId, stages } = projectData;
