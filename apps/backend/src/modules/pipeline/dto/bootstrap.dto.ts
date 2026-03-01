@@ -4,7 +4,24 @@ export class BootstrapDto {
   /** Идея проекта, например: "Хочу Telegram-бот для напоминаний" */
   idea: string;
 
-  /** Тип проекта: WEB_APP | TELEGRAM_BOT */
+  /**
+   * Тип проекта — определяет набор стадий pipeline:
+   *
+   * WEB_APP      — полный цикл (9 стадий): IDEA→DISCOVERY→ARCHITECTURE→PLANNING→BUILD→QA→SECURITY_GATE→DEPLOY→PRODUCTION
+   *                Когда: сложный веб-сервис с бэкендом, фронтендом, БД, несколько команд
+   *
+   * TELEGRAM_BOT — лёгкий бот (5 стадий): IDEA→ARCHITECTURE→BUILD→QA→DEPLOY
+   *                Когда: Telegram/Discord/Slack бот
+   *
+   * LANDING      — статика (4 стадии): IDEA→BUILD→QA→DEPLOY
+   *                Когда: игра, лендинг, статический сайт, pure frontend без бэкенда
+   *
+   * MICRO_SERVICE — API без фронтенда (6 стадий): IDEA→ARCHITECTURE→BUILD→QA→SECURITY_GATE→DEPLOY
+   *                Когда: REST/GraphQL API, микросервис, CLI-инструмент
+   *
+   * CUSTOM       — прототип (3 стадии): IDEA→BUILD→DEPLOY
+   *                Когда: быстрый MVP, эксперимент, proof-of-concept
+   */
   type: ProjectType;
 
   /** AgentId кто запросил (по умолчанию 'main') */
