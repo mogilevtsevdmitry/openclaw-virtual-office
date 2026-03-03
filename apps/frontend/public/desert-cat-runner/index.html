@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Desert Cat Runner 🐱</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #1a0a00;
+      overflow: hidden;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      touch-action: none;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    canvas { display: block; }
+
+    /* HUD */
+    #hud {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 20px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .hud-panel {
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,180,50,0.4);
+      border-radius: 10px;
+      padding: 8px 16px;
+      color: #ffe09a;
+      font-size: 14px;
+      backdrop-filter: blur(4px);
+    }
+    .hud-score { font-size: 22px; font-weight: 700; color: #ffd700; }
+    .hud-lives { font-size: 20px; letter-spacing: 2px; }
+    .hud-hi { font-size: 12px; color: #ffb84d; }
+
+    /* Mobile controls */
+    #mobile-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 24px;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .ctrl-btn {
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: rgba(255,180,50,0.25);
+      border: 2px solid rgba(255,180,50,0.6);
+      color: #ffd700;
+      font-size: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      pointer-events: all;
+      user-select: none;
+      -webkit-user-select: none;
+      backdrop-filter: blur(4px);
+      transition: background 0.1s;
+      touch-action: manipulation;
+    }
+    .ctrl-btn:active { background: rgba(255,180,50,0.5); }
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+    .ctrl-row { display: flex; gap: 10px; }
+    #jump-btn {
+      width: 90px; height: 90px;
+      font-size: 34px;
+      background: rgba(255,100,50,0.3);
+      border-color: rgba(255,100,50,0.7);
+    }
+
+    /* Screens */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(15, 5, 0, 0.88);
+      z-index: 20;
+      color: #ffe09a;
+      text-align: center;
+      padding: 20px;
+    }
+    .screen h1 { font-size: clamp(28px, 6vw, 52px); color: #ffd700; text-shadow: 0 0 20px #ff8c00; margin-bottom: 8px; }
+    .screen h2 { font-size: clamp(20px, 4vw, 36px); color: #ff9944; margin-bottom: 16px; }
+    .screen p { font-size: 15px; color: #ffcc88; margin: 4px 0; max-width: 440px; }
+    .screen .emoji-big { font-size: clamp(48px, 10vw, 80px); margin-bottom: 12px; }
+    .btn {
+      margin-top: 24px;
+      padding: 14px 40px;
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #ff8c00, #ffd700);
+      color: #1a0a00;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255,140,0,0.5);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn:hover { transform: scale(1.05); box-shadow: 0 6px 28px rgba(255,140,0,0.7); }
+    .btn:active { transform: scale(0.97); }
+    .controls-hint { margin-top: 16px; font-size: 13px; color: #cc9944; }
+    .score-final { font-size: 32px; color: #ffd700; margin: 8px 0; }
+
+    /* Leaderboard */
+    #leaderboard {
+      position: absolute;
+      top: 0; right: 0;
+      width: 220px;
+      background: rgba(0,0,0,0.7);
+      border-left: 1px solid rgba(255,180,50,0.3);
+      border-bottom: 1px solid rgba(255,180,50,0.3);
+      border-bottom-left-radius: 12px;
+      padding: 12px 16px;
+      color: #ffcc88;
+      font-size: 13px;
+      z-index: 11;
+      display: none;
+    }
+    #leaderboard h3 { color: #ffd700; margin-bottom: 8px; font-size: 14px; }
+    #leaderboard ol { padding-left: 18px; }
+    #leaderboard li { margin: 3px 0; }
+    #leaderboard li.current { color: #ffd700; font-weight: 700; }
+
+    /* Toast */
+    #toast {
+      position: absolute;
+      top: 70px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,180,0,0.9);
+      color: #1a0a00;
+      font-weight: 700;
+      font-size: 16px;
+      padding: 8px 24px;
+      border-radius: 30px;
+      z-index: 30;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* Power-up bar */
+    #powerup-bar {
+      position: absolute;
+      bottom: 110px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 11;
+      pointer-events: none;
+    }
+    .pu-badge {
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,180,50,0.5);
+      border-radius: 20px;
+      padding: 4px 12px;
+      color: #ffd700;
+      font-size: 13px;
+      display: none;
+    }
+    .pu-badge.active { display: block; }
+
+    /* Hide mobile controls on desktop hover */
+    @media (hover: hover) and (min-width: 768px) {
+      #mobile-controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="canvas-container">
+  <canvas id="game-canvas"></canvas>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-panel">
+      <div class="hud-score">🏆 <span id="score-val">0</span></div>
+      <div class="hud-hi">Best: <span id="hi-val">0</span></div>
+    </div>
+    <div class="hud-panel">
+      <div class="hud-lives" id="lives-val">❤️❤️❤️</div>
+      <div style="font-size:12px;color:#aaa;text-align:center">Lv.<span id="level-val">1</span></div>
+    </div>
+  </div>
+
+  <!-- Power-up bar -->
+  <div id="powerup-bar">
+    <div class="pu-badge" id="pu-shield">🛡️ Shield <span id="pu-shield-t"></span>s</div>
+    <div class="pu-badge" id="pu-magnet">🧲 Magnet <span id="pu-magnet-t"></span>s</div>
+    <div class="pu-badge" id="pu-speed">⚡ Speed <span id="pu-speed-t"></span>s</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- Leaderboard panel -->
+  <div id="leaderboard">
+    <h3>🏆 Leaderboard</h3>
+    <ol id="lb-list"></ol>
+  </div>
+
+  <!-- Mobile Controls -->
+  <div id="mobile-controls">
+    <div class="ctrl-group">
+      <div class="ctrl-row">
+        <div class="ctrl-btn" id="left-btn">◀</div>
+        <div class="ctrl-btn" id="right-btn">▶</div>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-btn" id="slide-btn">⬇</div>
+      </div>
+    </div>
+    <div class="ctrl-btn" id="jump-btn">↑</div>
+  </div>
+
+  <!-- Start Screen -->
+  <div class="screen" id="start-screen">
+    <div class="emoji-big">🐱</div>
+    <h1>Desert Cat Runner</h1>
+    <p>Беги по пескам, собирай монеты на выступах,</p>
+    <p>лови птичек, избегай червей и больших птиц!</p>
+    <button class="btn" id="start-btn">▶ Начать</button>
+    <div class="controls-hint">
+      ⌨️ ← → прыжок: Space/↑ &nbsp;|&nbsp; скольжение: ↓/S<br>
+      📱 Кнопки на экране
+    </div>
+    <button class="btn" style="margin-top:12px;background:rgba(255,255,255,0.1);color:#ffcc88;font-size:14px" id="lb-btn-start">🏆 Рейтинг</button>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div class="screen" id="gameover-screen" style="display:none">
+    <div class="emoji-big">😿</div>
+    <h2>Game Over</h2>
+    <div class="score-final">Очки: <span id="final-score">0</span></div>
+    <p id="new-record-msg" style="color:#ffd700;display:none">🎉 Новый рекорд!</p>
+    <button class="btn" id="restart-btn">↺ Ещё раз</button>
+    <button class="btn" style="margin-top:8px;background:rgba(255,255,255,0.1);color:#ffcc88;font-size:14px" id="lb-btn-go">🏆 Рейтинг</button>
+  </div>
+
+  <!-- Leaderboard Screen -->
+  <div class="screen" id="lb-screen" style="display:none">
+    <h2>🏆 Таблица рекордов</h2>
+    <ol id="lb-screen-list" style="text-align:left;font-size:18px;line-height:2;padding-left:24px"></ol>
+    <button class="btn" id="lb-close-btn">← Назад</button>
+  </div>
+
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════════════════════════
+// DESERT CAT RUNNER — Pure Three.js 3D Browser Game
+// No backend · LocalStorage leaderboard · PC + Mobile
+// ═══════════════════════════════════════════════════════════════════════════
+
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js';
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const LANE_COUNT = 3;
+const LANE_WIDTH = 3.2;
+const LANES = [-LANE_WIDTH, 0, LANE_WIDTH];
+const GRAVITY = -28;
+const JUMP_FORCE = 12;
+const SLIDE_DURATION = 0.6;
+const INITIAL_SPEED = 9;
+const MAX_SPEED = 26;
+const SPEED_INCREMENT = 0.004;
+const CHUNK_LENGTH = 60;
+const CHUNKS_AHEAD = 4;
+const CAT_HEIGHT_STAND = 0.7;
+const CAT_HEIGHT_SLIDE = 0.35;
+const CAT_RADIUS = 0.38;
+
+const COLORS = {
+  sand:      0xd4a96a,
+  sandDark:  0xb8883a,
+  sandLight: 0xf0c878,
+  sky1:      0x1a0a00,
+  sky2:      0x5c2a00,
+  catBody:   0xff8c42,
+  catStripe: 0xcc5500,
+  catEye:    0x00ccff,
+  worm:      0x8b4513,
+  wormHead:  0x5c2a00,
+  birdSmall: 0xffe066,
+  birdBig:   0xcc0000,
+  coin:      0xffd700,
+  gem:       0x00ffcc,
+  shield:    0x4af,
+  magnet:    0xff44ff,
+  speedpu:   0x44ffaa,
+  ledge:     0xc8824a,
+  ledgeDark: 0x9e5e2a,
+  hole:      0x1a0800,
+};
+
+// ── Leaderboard ────────────────────────────────────────────────────────────
+const LB_KEY = 'desertCatRunner_lb';
+function lbLoad() {
+  try { return JSON.parse(localStorage.getItem(LB_KEY) || '[]'); } catch { return []; }
+}
+function lbSave(scores) {
+  localStorage.setItem(LB_KEY, JSON.stringify(scores.slice(0, 10)));
+}
+function lbAdd(score) {
+  const scores = lbLoad();
+  scores.push({ score, date: new Date().toLocaleDateString() });
+  scores.sort((a, b) => b.score - a.score);
+  lbSave(scores);
+  return scores.findIndex(s => s.score === score && s.date === new Date().toLocaleDateString());
+}
+function lbBest() {
+  const s = lbLoad(); return s.length ? s[0].score : 0;
+}
+
+function renderLbScreen() {
+  const scores = lbLoad();
+  const el = document.getElementById('lb-screen-list');
+  el.innerHTML = scores.length
+    ? scores.slice(0, 10).map((s, i) =>
+        `<li style="color:${i===0?'#ffd700':'#ffcc88'}">${s.score.toLocaleString()} — ${s.date}</li>`
+      ).join('')
+    : '<li style="color:#888">Пока нет рекордов</li>';
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+// ── Three.js Setup ─────────────────────────────────────────────────────────
+const canvas = document.getElementById('game-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x3d1500, 0.035);
+
+const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 200);
+camera.position.set(0, 5, 11);
+camera.rotation.x = -0.35;
+
+// Resize
+function onResize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+onResize();
+window.addEventListener('resize', onResize);
+
+// ── Lights ─────────────────────────────────────────────────────────────────
+const ambientLight = new THREE.AmbientLight(0xffeedd, 0.6);
+scene.add(ambientLight);
+
+const sunLight = new THREE.DirectionalLight(0xff9944, 2.2);
+sunLight.position.set(10, 30, 5);
+sunLight.castShadow = true;
+sunLight.shadow.camera.near = 0.1;
+sunLight.shadow.camera.far = 120;
+sunLight.shadow.camera.left = -30;
+sunLight.shadow.camera.right = 30;
+sunLight.shadow.camera.top = 20;
+sunLight.shadow.camera.bottom = -20;
+sunLight.shadow.mapSize.set(1024, 1024);
+scene.add(sunLight);
+
+const fillLight = new THREE.DirectionalLight(0x442200, 0.5);
+fillLight.position.set(-5, 5, -5);
+scene.add(fillLight);
+
+// ── Sky gradient via background ────────────────────────────────────────────
+renderer.setClearColor(0x3d1500);
+
+// Sun sprite
+const sunGeo = new THREE.SphereGeometry(3, 16, 16);
+const sunMat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+sunMesh.position.set(20, 35, -80);
+scene.add(sunMesh);
+// Sun glow
+const glowGeo = new THREE.SphereGeometry(5, 16, 16);
+const glowMat = new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.18 });
+const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+glowMesh.position.copy(sunMesh.position);
+scene.add(glowMesh);
+
+// ── Geometry helpers ───────────────────────────────────────────────────────
+function makeMat(color, opts = {}) {
+  return new THREE.MeshLambertMaterial({ color, ...opts });
+}
+function makeBox(w, h, d, color, opts) {
+  const g = new THREE.BoxGeometry(w, h, d);
+  const m = new THREE.Mesh(g, makeMat(color, opts));
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+function makeSphere(r, color, opts) {
+  const g = new THREE.SphereGeometry(r, 10, 10);
+  const m = new THREE.Mesh(g, makeMat(color, opts));
+  m.castShadow = true;
+  return m;
+}
+function makeCylinder(rt, rb, h, color, opts) {
+  const g = new THREE.CylinderGeometry(rt, rb, h, 10);
+  const m = new THREE.Mesh(g, makeMat(color, opts));
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+
+// ── Cat character ──────────────────────────────────────────────────────────
+class Cat {
+  constructor() {
+    this.group = new THREE.Group();
+    this._build();
+    scene.add(this.group);
+
+    this.lane = 1; // 0,1,2
+    this.targetX = LANES[1];
+    this.y = 0;
+    this.vy = 0;
+    this.onGround = true;
+    this.onLedge = false;
+    this.ledgeY = 0;
+    this.isSliding = false;
+    this.slideTimer = 0;
+    this.jumpCount = 0;
+    this.maxJumps = 2;
+    this.alive = true;
+
+    this.hitFlash = 0;
+    this.runCycle = 0;
+  }
+
+  _build() {
+    // Body
+    this.body = makeBox(0.72, 0.56, 0.56, COLORS.catBody);
+    this.body.position.y = 0.28;
+    this.group.add(this.body);
+
+    // Stripes
+    for (let i = 0; i < 3; i++) {
+      const s = makeBox(0.06, 0.56, 0.58, COLORS.catStripe);
+      s.position.set(-0.2 + i * 0.2, 0.28, 0);
+      this.group.add(s);
+    }
+
+    // Head
+    this.head = makeBox(0.6, 0.52, 0.52, COLORS.catBody);
+    this.head.position.set(0, 0.75, 0);
+    this.group.add(this.head);
+
+    // Ears
+    const earL = makeBox(0.16, 0.18, 0.06, COLORS.catStripe);
+    earL.position.set(-0.22, 1.05, 0);
+    this.group.add(earL);
+    const earR = earL.clone();
+    earR.position.set(0.22, 1.05, 0);
+    this.group.add(earR);
+
+    // Eyes
+    const eyeL = makeSphere(0.07, COLORS.catEye);
+    eyeL.position.set(-0.15, 0.8, 0.27);
+    this.group.add(eyeL);
+    const eyeR = eyeL.clone();
+    eyeR.position.set(0.15, 0.8, 0.27);
+    this.group.add(eyeR);
+
+    // Pupils
+    const pupL = makeSphere(0.04, 0x000000);
+    pupL.position.set(-0.15, 0.8, 0.31);
+    this.group.add(pupL);
+    const pupR = pupL.clone();
+    pupR.position.set(0.15, 0.8, 0.31);
+    this.group.add(pupR);
+
+    // Nose
+    const nose = makeSphere(0.04, 0xff6688);
+    nose.position.set(0, 0.73, 0.28);
+    this.group.add(nose);
+
+    // Tail
+    this.tail = makeBox(0.1, 0.1, 0.6, COLORS.catStripe);
+    this.tail.position.set(0, 0.32, -0.45);
+    this.group.add(this.tail);
+
+    // Legs
+    this.legFL = makeBox(0.14, 0.28, 0.14, COLORS.catBody);
+    this.legFL.position.set(-0.22, -0.01, 0.18);
+    this.group.add(this.legFL);
+    this.legFR = this.legFL.clone();
+    this.legFR.position.set(0.22, -0.01, 0.18);
+    this.group.add(this.legFR);
+    this.legBL = this.legFL.clone();
+    this.legBL.position.set(-0.22, -0.01, -0.2);
+    this.group.add(this.legBL);
+    this.legBR = this.legFL.clone();
+    this.legBR.position.set(0.22, -0.01, -0.2);
+    this.group.add(this.legBR);
+
+    this.group.position.set(LANES[1], 0, 0);
+  }
+
+  jump() {
+    if (this.jumpCount < this.maxJumps) {
+      this.vy = JUMP_FORCE;
+      this.onGround = false;
+      this.onLedge = false;
+      this.jumpCount++;
+      showToast(this.jumpCount > 1 ? '🐱 Double Jump!' : '');
+    }
+  }
+
+  startSlide() {
+    if (!this.isSliding) {
+      this.isSliding = true;
+      this.slideTimer = SLIDE_DURATION;
+      this.group.scale.y = 0.5;
+      this.group.position.y = this.y;
+    }
+  }
+
+  moveLeft()  { if (this.lane > 0) this.lane--; this.targetX = LANES[this.lane]; }
+  moveRight() { if (this.lane < 2) this.lane++; this.targetX = LANES[this.lane]; }
+
+  update(dt, groundY) {
+    if (!this.alive) return;
+
+    // Horizontal smoothing
+    const dx = this.targetX - this.group.position.x;
+    this.group.position.x += dx * Math.min(dt * 12, 1);
+
+    // Slide
+    if (this.isSliding) {
+      this.slideTimer -= dt;
+      if (this.slideTimer <= 0) {
+        this.isSliding = false;
+        this.group.scale.y = 1;
+      }
+    }
+
+    // Gravity
+    if (!this.onGround && !this.onLedge) {
+      this.vy += GRAVITY * dt;
+    }
+    this.y += this.vy * dt;
+
+    const minY = this.onLedge ? this.ledgeY : groundY;
+    if (this.y <= minY) {
+      this.y = minY;
+      this.vy = 0;
+      this.onGround = true;
+      this.jumpCount = 0;
+      this.onLedge = false;
+    }
+    this.group.position.y = this.y;
+
+    // Running animation
+    if (this.onGround || this.onLedge) {
+      this.runCycle += dt * 8;
+      const swing = Math.sin(this.runCycle) * 0.3;
+      this.legFL.rotation.x = swing;
+      this.legBR.rotation.x = swing;
+      this.legFR.rotation.x = -swing;
+      this.legBL.rotation.x = -swing;
+      this.tail.rotation.x = Math.sin(this.runCycle * 0.5) * 0.4;
+    } else {
+      // Jump pose
+      this.legFL.rotation.x = -0.5;
+      this.legBR.rotation.x = 0.5;
+      this.legFR.rotation.x = -0.5;
+      this.legBL.rotation.x = 0.5;
+    }
+    // Body bob
+    this.body.position.y = 0.28 + (this.onGround ? Math.sin(this.runCycle) * 0.04 : 0);
+    this.head.position.y = 0.75 + (this.onGround ? Math.sin(this.runCycle) * 0.04 : 0);
+
+    // Hit flash
+    if (this.hitFlash > 0) {
+      this.hitFlash -= dt;
+      const v = Math.sin(this.hitFlash * 20) > 0;
+      this.group.visible = v;
+    } else {
+      this.group.visible = true;
+    }
+  }
+
+  getBox() {
+    const h = this.isSliding ? CAT_HEIGHT_SLIDE : CAT_HEIGHT_STAND;
+    return new THREE.Box3(
+      new THREE.Vector3(this.group.position.x - CAT_RADIUS, this.y, -0.5),
+      new THREE.Vector3(this.group.position.x + CAT_RADIUS, this.y + h, 0.5)
+    );
+  }
+
+  flash() { this.hitFlash = 1.5; }
+
+  setGroundLevel(y) {
+    if (this.onLedge) return;
+    if (this.y <= y + 0.05 && this.vy <= 0) {
+      this.onGround = true;
+      this.y = y;
+      this.vy = 0;
+      this.jumpCount = 0;
+    }
+  }
+}
+
+// ── Ground / Track chunks ──────────────────────────────────────────────────
+class TrackChunk {
+  constructor(z, type = 'normal') {
+    this.z = z;
+    this.type = type;
+    this.group = new THREE.Group();
+    scene.add(this.group);
+    this._build();
+  }
+
+  _build() {
+    const len = CHUNK_LENGTH;
+    // Ground
+    const ground = makeBox(LANE_WIDTH * LANE_COUNT + 2, 0.4, len, COLORS.sand);
+    ground.position.set(0, -0.2, this.z - len / 2);
+    this.group.add(ground);
+
+    // Side walls (dunes)
+    for (let side = -1; side <= 1; side += 2) {
+      const dune = makeBox(3, 2 + Math.random() * 3, len, COLORS.sandDark);
+      dune.position.set(side * (LANE_WIDTH * 1.5 + 2), 0.5, this.z - len / 2);
+      this.group.add(dune);
+      // Extra sand bumps
+      for (let i = 0; i < 4; i++) {
+        const bump = makeSphere(0.8 + Math.random() * 1.2, COLORS.sandLight);
+        bump.position.set(side * (LANE_WIDTH * 1.5 + 1.5 + Math.random() * 1.5),
+          0.5 + Math.random() * 1.5, this.z - len * Math.random());
+        bump.scale.set(1.5, 1, 1.5);
+        this.group.add(bump);
+      }
+    }
+
+    // Lane dividers (faint)
+    for (let i = 0; i < 2; i++) {
+      const div = makeBox(0.06, 0.02, len, COLORS.sandDark);
+      div.position.set(LANES[i] + LANE_WIDTH / 2, 0.01, this.z - len / 2);
+      this.group.add(div);
+    }
+
+    // Distant dunes
+    for (let i = 0; i < 6; i++) {
+      const d = makeSphere(4 + Math.random() * 5, COLORS.sandDark);
+      const side = Math.random() > 0.5 ? 1 : -1;
+      d.position.set(side * (12 + Math.random() * 10), 2, this.z - Math.random() * len);
+      d.scale.set(1.5, 0.6, 1.5);
+      this.group.add(d);
+    }
+  }
+
+  remove() { scene.remove(this.group); }
+}
+
+// ── Obstacle / Collectible spawner ─────────────────────────────────────────
+const OBJECT_TYPES = {
+  COIN:      { color: COLORS.coin,    score: 10,   tag: 'collectible' },
+  GEM:       { color: COLORS.gem,     score: 50,   tag: 'collectible' },
+  BIRD_S:    { color: COLORS.birdSmall, score: 30, tag: 'collectible' },
+  BIRD_B:    { color: COLORS.birdBig,   score: 0,  tag: 'obstacle'   },
+  WORM:      { color: COLORS.worm,    score: 0,    tag: 'obstacle'   },
+  PIT:       { color: COLORS.hole,    score: 0,    tag: 'pit'        },
+  LEDGE:     { color: COLORS.ledge,   score: 20,   tag: 'ledge'      },
+  SHIELD:    { color: COLORS.shield,  score: 0,    tag: 'powerup', pu: 'shield'  },
+  MAGNET:    { color: COLORS.magnet,  score: 0,    tag: 'powerup', pu: 'magnet'  },
+  SPEED:     { color: COLORS.speedpu, score: 0,    tag: 'powerup', pu: 'speed'   },
+};
+
+class GameObject {
+  constructor(type, lane, z) {
+    this.type = type;
+    this.def = OBJECT_TYPES[type];
+    this.lane = lane;
+    this.z = z;
+    this.x = LANES[lane];
+    this.alive = true;
+    this.group = new THREE.Group();
+    scene.add(this.group);
+    this.group.position.set(this.x, 0, z);
+    this._animT = Math.random() * Math.PI * 2;
+
+    this.wormState = 'hidden'; // hidden | emerging | visible | retreating
+    this.wormTimer = 0;
+    this.wormY = -0.8;
+
+    this.ledgeY = 1.2;
+    this.coinOnLedge = null;
+
+    this._build();
+  }
+
+  _build() {
+    const t = this.type;
+    if (t === 'COIN') {
+      this.mesh = makeCylinder(0.28, 0.28, 0.12, COLORS.coin);
+      this.mesh.rotation.x = Math.PI / 2;
+      this.mesh.position.y = 0.5;
+      this.group.add(this.mesh);
+      // Shine ring
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.3, 0.04, 8, 24),
+        makeMat(0xffee44, { transparent: true, opacity: 0.6 })
+      );
+      ring.position.y = 0.5;
+      ring.rotation.x = Math.PI / 2;
+      this.group.add(ring);
+    } else if (t === 'GEM') {
+      const g = new THREE.OctahedronGeometry(0.32);
+      this.mesh = new THREE.Mesh(g, makeMat(COLORS.gem, { transparent: true, opacity: 0.85 }));
+      this.mesh.position.y = 0.6;
+      this.group.add(this.mesh);
+    } else if (t === 'BIRD_S') {
+      this._buildBird(0.28, COLORS.birdSmall, 1.2);
+    } else if (t === 'BIRD_B') {
+      this._buildBird(0.52, COLORS.birdBig, 1.8);
+    } else if (t === 'WORM') {
+      this._buildWorm();
+    } else if (t === 'PIT') {
+      this._buildPit();
+    } else if (t === 'LEDGE') {
+      this._buildLedge();
+    } else if (t === 'SHIELD') {
+      this._buildPowerup(COLORS.shield, '🛡');
+    } else if (t === 'MAGNET') {
+      this._buildPowerup(COLORS.magnet, '🧲');
+    } else if (t === 'SPEED') {
+      this._buildPowerup(COLORS.speedpu, '⚡');
+    }
+  }
+
+  _buildBird(size, color, flyH) {
+    this.flyH = flyH;
+    // Body
+    const body = makeBox(size * 1.8, size * 0.8, size * 0.9, color);
+    body.position.y = flyH;
+    this.group.add(body);
+    // Wings
+    this.wingL = makeBox(size * 1.4, size * 0.15, size * 0.7, color === COLORS.birdBig ? 0x990000 : 0xffcc00);
+    this.wingL.position.set(-size * 1.6, flyH + size * 0.2, 0);
+    this.group.add(this.wingL);
+    this.wingR = this.wingL.clone();
+    this.wingR.position.set(size * 1.6, flyH + size * 0.2, 0);
+    this.group.add(this.wingR);
+    // Head + beak
+    const head = makeBox(size * 0.9, size * 0.8, size * 0.8, color);
+    head.position.set(size * 1.1, flyH + size * 0.1, 0);
+    this.group.add(head);
+    const beak = makeBox(size * 0.5, size * 0.2, size * 0.2, 0xff8800);
+    beak.position.set(size * 1.6, flyH, 0);
+    this.group.add(beak);
+    // Eye
+    const eye = makeSphere(size * 0.15, 0x000000);
+    eye.position.set(size * 1.3, flyH + size * 0.2, size * 0.36);
+    this.group.add(eye);
+  }
+
+  _buildWorm() {
+    this.wormGroup = new THREE.Group();
+    this.group.add(this.wormGroup);
+
+    const segCount = 5;
+    this.wormSegs = [];
+    for (let i = 0; i < segCount; i++) {
+      const seg = makeCylinder(0.22 - i * 0.03, 0.22 - i * 0.03, 0.28, i % 2 === 0 ? COLORS.worm : COLORS.wormHead);
+      seg.position.y = -0.8; // start hidden
+      this.wormGroup.add(seg);
+      this.wormSegs.push(seg);
+    }
+    // Head bump
+    const head = makeSphere(0.26, COLORS.wormHead);
+    head.position.y = -0.8;
+    this.wormGroup.add(head);
+    this.wormHead3D = head;
+
+    // Eyes
+    this.wormEyeL = makeSphere(0.07, 0x111111);
+    this.wormEyeL.position.y = -0.8;
+    this.wormGroup.add(this.wormEyeL);
+    this.wormEyeR = this.wormEyeL.clone();
+    this.wormGroup.add(this.wormEyeR);
+
+    this.wormTimer = 1 + Math.random() * 2;
+    this.wormState = 'hidden';
+  }
+
+  _buildPit() {
+    // Dark floor
+    const floor = makeBox(LANE_WIDTH - 0.1, 0.3, 5.5, COLORS.hole);
+    floor.position.y = -0.8;
+    this.group.add(floor);
+    // Pit edges
+    const edgeL = makeBox(0.25, 0.5, 5.5, COLORS.sandDark);
+    edgeL.position.set(-LANE_WIDTH / 2 + 0.12, 0, 0);
+    this.group.add(edgeL);
+    const edgeR = edgeL.clone();
+    edgeR.position.x = LANE_WIDTH / 2 - 0.12;
+    this.group.add(edgeR);
+    this.pitDepth = -2;
+    this.pitLength = 5.5;
+  }
+
+  _buildLedge() {
+    const w = LANE_WIDTH - 0.3;
+    const h = 1.2;
+    const l = 7 + Math.random() * 5;
+    this.ledgeLength = l;
+
+    const ledge = makeBox(w, h, l, COLORS.ledge);
+    ledge.position.y = h / 2;
+    this.group.add(ledge);
+
+    // Top detail
+    const top = makeBox(w, 0.15, l, COLORS.ledgeDark);
+    top.position.y = h;
+    this.group.add(top);
+
+    // Stone blocks pattern
+    for (let i = 0; i < Math.floor(l / 2); i++) {
+      const block = makeBox(w - 0.1, 0.08, 0.06, COLORS.sandDark);
+      block.position.set(0, 0.3 + (i % 3) * 0.3, -l / 2 + i * 2 + 1);
+      this.group.add(block);
+    }
+
+    // Coins on top of ledge
+    this.ledgeCoins = [];
+    const coinCount = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < coinCount; i++) {
+      const coin = makeCylinder(0.22, 0.22, 0.1, COLORS.coin);
+      coin.rotation.x = Math.PI / 2;
+      coin.position.set(
+        (Math.random() - 0.5) * (w - 0.5),
+        h + 0.3,
+        -l / 2 + (i + 0.5) * (l / coinCount)
+      );
+      this.group.add(coin);
+      this.ledgeCoins.push({ mesh: coin, alive: true, offset: Math.random() * Math.PI * 2 });
+    }
+    this.ledgeH = h;
+  }
+
+  _buildPowerup(color, emoji) {
+    this.mesh = makeBox(0.5, 0.5, 0.5, color, { transparent: true, opacity: 0.9 });
+    this.mesh.position.y = 0.8;
+    this.group.add(this.mesh);
+    const glow = makeBox(0.7, 0.7, 0.7, color, { transparent: true, opacity: 0.25, wireframe: false });
+    glow.position.y = 0.8;
+    this.group.add(glow);
+    this.glowMesh = glow;
+  }
+
+  update(dt) {
+    if (!this.alive) return;
+    this._animT += dt;
+
+    if (this.type === 'COIN' || this.type === 'GEM') {
+      if (this.mesh) {
+        this.mesh.rotation.z += dt * 2.5;
+        this.mesh.position.y = 0.5 + Math.sin(this._animT * 3) * 0.12;
+      }
+    }
+
+    if (this.type === 'BIRD_S' || this.type === 'BIRD_B') {
+      const flapSpeed = this.type === 'BIRD_B' ? 4 : 7;
+      const flapAmp = this.type === 'BIRD_B' ? 0.3 : 0.5;
+      const flap = Math.sin(this._animT * flapSpeed) * flapAmp;
+      if (this.wingL) this.wingL.rotation.z = flap;
+      if (this.wingR) this.wingR.rotation.z = -flap;
+      // Bob up/down
+      this.group.position.y = Math.sin(this._animT * 2.2) * 0.25;
+    }
+
+    if (this.type === 'WORM') {
+      this._updateWorm(dt);
+    }
+
+    if (this.type === 'LEDGE') {
+      // Animate ledge coins
+      for (const c of this.ledgeCoins) {
+        if (c.alive) {
+          c.mesh.rotation.z += dt * 2;
+          c.mesh.position.y = this.ledgeH + 0.3 + Math.sin(this._animT * 3 + c.offset) * 0.08;
+        }
+      }
+    }
+
+    if (this.type === 'SHIELD' || this.type === 'MAGNET' || this.type === 'SPEED') {
+      if (this.mesh) {
+        this.mesh.rotation.x += dt * 1.5;
+        this.mesh.rotation.y += dt * 2;
+        this.mesh.position.y = 0.8 + Math.sin(this._animT * 3) * 0.15;
+      }
+      if (this.glowMesh) {
+        this.glowMesh.rotation.x -= dt * 1.0;
+        this.glowMesh.rotation.y -= dt * 1.5;
+        this.glowMesh.position.y = 0.8 + Math.sin(this._animT * 3) * 0.15;
+        this.glowMesh.material.opacity = 0.2 + Math.sin(this._animT * 4) * 0.1;
+      }
+    }
+  }
+
+  _updateWorm(dt) {
+    const segsLen = this.wormSegs.length;
+    this.wormTimer -= dt;
+
+    if (this.wormState === 'hidden' && this.wormTimer <= 0) {
+      this.wormState = 'emerging';
+      this.wormTimer = 1.2;
+    } else if (this.wormState === 'emerging') {
+      const prog = 1 - Math.max(0, this.wormTimer) / 1.2;
+      for (let i = 0; i < segsLen; i++) {
+        this.wormSegs[i].position.y = -0.8 + prog * (0.3 * i + 0.14);
+      }
+      this.wormHead3D.position.y = -0.8 + prog * (0.3 * segsLen + 0.2);
+      this.wormEyeL.position.set(-0.12, this.wormHead3D.position.y + 0.1, 0.2);
+      this.wormEyeR.position.set(0.12, this.wormHead3D.position.y + 0.1, 0.2);
+      if (this.wormTimer <= 0) { this.wormState = 'visible'; this.wormTimer = 1.5 + Math.random() * 1.5; }
+    } else if (this.wormState === 'visible') {
+      // Wiggle
+      const angle = Math.sin(this._animT * 6) * 0.18;
+      this.wormGroup.rotation.z = angle;
+      if (this.wormTimer <= 0) { this.wormState = 'retreating'; this.wormTimer = 0.8; }
+    } else if (this.wormState === 'retreating') {
+      const prog = Math.max(0, this.wormTimer) / 0.8;
+      for (let i = 0; i < segsLen; i++) {
+        this.wormSegs[i].position.y = -0.8 + prog * (0.3 * i + 0.14);
+      }
+      this.wormHead3D.position.y = -0.8 + prog * (0.3 * segsLen + 0.2);
+      this.wormEyeL.position.set(-0.12, this.wormHead3D.position.y + 0.1, 0.2);
+      this.wormEyeR.position.set(0.12, this.wormHead3D.position.y + 0.1, 0.2);
+      if (this.wormTimer <= 0) { this.wormState = 'hidden'; this.wormTimer = 1.5 + Math.random() * 2; }
+    }
+  }
+
+  isWormDangerous() {
+    return this.wormState === 'visible' || this.wormState === 'emerging';
+  }
+
+  getBox() {
+    const pos = this.group.position;
+    if (this.type === 'COIN' || this.type === 'GEM') {
+      const r = this.type === 'GEM' ? 0.36 : 0.3;
+      const py = this.mesh ? this.mesh.position.y : 0.5;
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - r, pos.y + py - r, pos.z - r),
+        new THREE.Vector3(pos.x + r, pos.y + py + r, pos.z + r)
+      );
+    }
+    if (this.type === 'BIRD_S') {
+      const fh = this.flyH || 1.2;
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - 0.9, pos.y + fh - 0.2, pos.z - 0.5),
+        new THREE.Vector3(pos.x + 0.9, pos.y + fh + 0.5, pos.z + 0.5)
+      );
+    }
+    if (this.type === 'BIRD_B') {
+      const fh = this.flyH || 1.8;
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - 1.4, pos.y + fh - 0.4, pos.z - 0.7),
+        new THREE.Vector3(pos.x + 1.4, pos.y + fh + 0.8, pos.z + 0.7)
+      );
+    }
+    if (this.type === 'WORM') {
+      if (!this.isWormDangerous()) return new THREE.Box3(); // safe when hidden
+      const topY = this.wormHead3D ? this.wormHead3D.position.y : 0.5;
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - 0.3, pos.y - 0.1, pos.z - 0.3),
+        new THREE.Vector3(pos.x + 0.3, pos.y + topY + 0.3, pos.z + 0.3)
+      );
+    }
+    if (this.type === 'PIT') {
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - LANE_WIDTH / 2 + 0.3, -3, pos.z - this.pitLength / 2),
+        new THREE.Vector3(pos.x + LANE_WIDTH / 2 - 0.3, 0, pos.z + this.pitLength / 2)
+      );
+    }
+    if (this.type === 'LEDGE') {
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - LANE_WIDTH / 2 + 0.1, pos.y, pos.z - this.ledgeLength / 2),
+        new THREE.Vector3(pos.x + LANE_WIDTH / 2 - 0.1, pos.y + this.ledgeH + 0.05, pos.z + this.ledgeLength / 2)
+      );
+    }
+    if (this.type === 'SHIELD' || this.type === 'MAGNET' || this.type === 'SPEED') {
+      const py = (this.mesh ? this.mesh.position.y : 0.8) + pos.y;
+      return new THREE.Box3(
+        new THREE.Vector3(pos.x - 0.4, py - 0.35, pos.z - 0.4),
+        new THREE.Vector3(pos.x + 0.4, py + 0.45, pos.z + 0.4)
+      );
+    }
+    return new THREE.Box3(
+      new THREE.Vector3(pos.x - 0.5, pos.y, pos.z - 0.5),
+      new THREE.Vector3(pos.x + 0.5, pos.y + 1, pos.z + 0.5)
+    );
+  }
+
+  remove() { scene.remove(this.group); }
+}
+
+// ── Particle system ────────────────────────────────────────────────────────
+class Particle {
+  constructor(pos, color) {
+    const g = new THREE.SphereGeometry(0.1, 4, 4);
+    this.mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color }));
+    this.mesh.position.copy(pos);
+    this.vel = new THREE.Vector3(
+      (Math.random() - 0.5) * 5,
+      Math.random() * 6 + 2,
+      (Math.random() - 0.5) * 3
+    );
+    this.life = 0.7 + Math.random() * 0.5;
+    this.maxLife = this.life;
+    scene.add(this.mesh);
+  }
+  update(dt) {
+    this.vel.y -= 15 * dt;
+    this.mesh.position.addScaledVector(this.vel, dt);
+    this.life -= dt;
+    const t = this.life / this.maxLife;
+    this.mesh.material.opacity = t;
+    this.mesh.material.transparent = true;
+    this.mesh.scale.setScalar(t * 1.2);
+    return this.life > 0;
+  }
+  remove() { scene.remove(this.mesh); }
+}
+
+function spawnParticles(pos, color, count = 8) {
+  for (let i = 0; i < count; i++) particles.push(new Particle(pos, color));
+}
+
+// ── Game state ─────────────────────────────────────────────────────────────
+let cat, chunks, objects, particles;
+let score, lives, speed, distance, level;
+let running, gameOver;
+let spawnZ, nextChunkZ;
+let powerups; // { shield: t, magnet: t, speed: t }
+let lastTime = 0;
+
+// ── Input ──────────────────────────────────────────────────────────────────
+const keys = {};
+const prevKeys = {};
+
+window.addEventListener('keydown', e => { keys[e.code] = true; });
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function keyJustDown(code) { return keys[code] && !prevKeys[code]; }
+
+// Mobile
+document.getElementById('left-btn').addEventListener('touchstart', e => { e.preventDefault(); if (running) cat.moveLeft(); }, { passive: false });
+document.getElementById('right-btn').addEventListener('touchstart', e => { e.preventDefault(); if (running) cat.moveRight(); }, { passive: false });
+document.getElementById('jump-btn').addEventListener('touchstart', e => { e.preventDefault(); if (running) cat.jump(); }, { passive: false });
+document.getElementById('slide-btn').addEventListener('touchstart', e => { e.preventDefault(); if (running) cat.startSlide(); }, { passive: false });
+
+// Swipe
+let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!running) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const dt2 = Date.now() - touchStartTime;
+  if (dt2 > 400) return;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+    if (dx < 0) cat.moveLeft(); else cat.moveRight();
+  } else if (Math.abs(dy) > 40) {
+    if (dy < 0) cat.jump(); else cat.startSlide();
+  }
+}, { passive: true });
+
+// ── Spawn logic ────────────────────────────────────────────────────────────
+const SPAWN_TYPES = ['COIN','COIN','COIN','GEM','BIRD_S','BIRD_B','WORM','WORM','PIT','LEDGE','SHIELD','MAGNET','SPEED'];
+const SPAWN_WEIGHTS = [30,30,30,10,18,8,20,20,10,15,4,4,4];
+const W_SUM = SPAWN_WEIGHTS.reduce((a,b)=>a+b,0);
+
+function weightedRandom(types, weights, sum) {
+  let r = Math.random() * sum;
+  for (let i = 0; i < types.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return types[i];
+  }
+  return types[0];
+}
+
+function spawnObjects(z, lvl) {
+  const count = 1 + Math.floor(lvl * 0.4);
+  const usedLanes = new Set();
+  for (let i = 0; i < count; i++) {
+    let lane, attempts = 0;
+    do { lane = Math.floor(Math.random() * LANE_COUNT); attempts++; }
+    while (usedLanes.has(lane) && attempts < 10);
+    usedLanes.add(lane);
+
+    // Filter by level
+    let pool = [...SPAWN_TYPES];
+    let weights = [...SPAWN_WEIGHTS];
+    if (lvl < 2) { // remove big bird, adjust
+      const bi = pool.indexOf('BIRD_B');
+      if (bi >= 0) { pool.splice(bi,1); weights.splice(bi,1); }
+    }
+    const wSum = weights.reduce((a,b)=>a+b,0);
+    const type = weightedRandom(pool, weights, wSum);
+    objects.push(new GameObject(type, lane, z));
+  }
+}
+
+// ── Init game ──────────────────────────────────────────────────────────────
+function initGame() {
+  // Clear old
+  if (cat) scene.remove(cat.group);
+  if (chunks) chunks.forEach(c => c.remove());
+  if (objects) objects.forEach(o => o.remove());
+  if (particles) particles.forEach(p => p.remove());
+
+  // Clear extra scene objects except lights/sun
+  const toRemove = [];
+  scene.traverse(obj => {
+    if (obj !== scene && obj !== sunMesh && obj !== glowMesh &&
+        obj.parent === scene &&
+        !(obj instanceof THREE.Light)) {
+      toRemove.push(obj);
+    }
+  });
+  toRemove.forEach(o => scene.remove(o));
+  // Re-add lights/sun
+  scene.add(ambientLight, sunLight, fillLight, sunMesh, glowMesh);
+
+  score = 0; lives = 3; speed = INITIAL_SPEED; distance = 0; level = 1;
+  running = false; gameOver = false;
+  powerups = { shield: 0, magnet: 0, speed: 0 };
+  chunks = []; objects = []; particles = [];
+
+  cat = new Cat();
+
+  // Build initial track
+  nextChunkZ = 10;
+  spawnZ = -CHUNK_LENGTH;
+  for (let i = 0; i < CHUNKS_AHEAD; i++) {
+    chunks.push(new TrackChunk(nextChunkZ));
+    nextChunkZ -= CHUNK_LENGTH;
+  }
+
+  updateHUD();
+  document.getElementById('powerup-bar').querySelectorAll('.pu-badge').forEach(b => b.classList.remove('active'));
+}
+
+function updateHUD() {
+  document.getElementById('score-val').textContent = score.toLocaleString();
+  document.getElementById('hi-val').textContent = lbBest().toLocaleString();
+  const heartArr = '❤️'.repeat(lives) + '🖤'.repeat(Math.max(0, 3 - lives));
+  document.getElementById('lives-val').textContent = heartArr;
+  document.getElementById('level-val').textContent = level;
+}
+
+function updatePowerupHUD(dt) {
+  for (const [pu, el] of [
+    ['shield', document.getElementById('pu-shield')],
+    ['magnet', document.getElementById('pu-magnet')],
+    ['speed',  document.getElementById('pu-speed')],
+  ]) {
+    if (powerups[pu] > 0) {
+      powerups[pu] = Math.max(0, powerups[pu] - dt);
+      const tEl = el.querySelector('span');
+      if (tEl) tEl.textContent = Math.ceil(powerups[pu]);
+      if (powerups[pu] > 0) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+        powerups[pu] = 0;
+      }
+    }
+  }
+}
+
+// ── Main game loop ─────────────────────────────────────────────────────────
+function gameLoop(timestamp) {
+  requestAnimationFrame(gameLoop);
+
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+  lastTime = timestamp;
+
+  if (!running) return;
+
+  // Speed
+  const effectiveSpeed = speed * (powerups.speed > 0 ? 1.5 : 1);
+  speed = Math.min(MAX_SPEED, INITIAL_SPEED + distance * SPEED_INCREMENT);
+  level = Math.floor(1 + distance / 150);
+  distance += effectiveSpeed * dt;
+  score += Math.round(effectiveSpeed * dt * 2);
+
+  // Move camera & track
+  const moveZ = effectiveSpeed * dt;
+
+  // Move chunks
+  chunks.forEach(c => c.group.position.z += moveZ);
+  objects.forEach(o => o.group.position.z += moveZ);
+  particles.forEach(p => { p.mesh.position.z += moveZ * 0; }); // particles stationary on world
+  sunMesh.position.z += moveZ * 0.01;
+  glowMesh.position.z += moveZ * 0.01;
+
+  // Spawn new chunks
+  const lastChunk = chunks[chunks.length - 1];
+  if (lastChunk && lastChunk.group.position.z > -CHUNK_LENGTH * (CHUNKS_AHEAD - 1)) {
+    chunks.push(new TrackChunk(nextChunkZ));
+    nextChunkZ -= CHUNK_LENGTH;
+  }
+
+  // Remove far-behind chunks
+  while (chunks.length && chunks[0].group.position.z > 80) {
+    chunks[0].remove(); chunks.shift();
+  }
+
+  // Spawn objects
+  spawnZ += moveZ;
+  if (spawnZ > 0) {
+    spawnObjects(-(CHUNK_LENGTH * CHUNKS_AHEAD - 10 + Math.random() * 15), level);
+    spawnZ = -(20 + Math.random() * 10 - level * 0.5);
+  }
+
+  // Remove objects behind camera
+  for (let i = objects.length - 1; i >= 0; i--) {
+    if (objects[i].group.position.z > 20) {
+      objects[i].remove();
+      objects.splice(i, 1);
+    }
+  }
+
+  // Update objects
+  objects.forEach(o => o.update(dt));
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    if (!particles[i].update(dt)) {
+      particles[i].remove();
+      particles.splice(i, 1);
+    }
+  }
+
+  // ── Cat physics & ground ────────────────────────────────────────────────
+  cat.onGround = false;
+  cat.onLedge = false;
+  const catBox = cat.getBox();
+  const catZ = cat.group.position.z;
+
+  // Check ledge collision
+  let onLedgeThisFrame = false;
+  for (const obj of objects) {
+    if (obj.type === 'LEDGE' && obj.alive) {
+      const lb = obj.getBox();
+      // Check if cat is above ledge and within XZ bounds
+      if (catBox.min.x < lb.max.x && catBox.max.x > lb.min.x &&
+          catZ > lb.min.z - 0.5 && catZ < lb.max.z + 0.5) {
+        const ledgeTopY = lb.max.y;
+        if (cat.y >= ledgeTopY - 0.15 && cat.vy <= 0) {
+          cat.onLedge = true;
+          cat.ledgeY = ledgeTopY;
+          cat.y = ledgeTopY;
+          cat.vy = 0;
+          cat.onGround = true;
+          cat.jumpCount = 0;
+          onLedgeThisFrame = true;
+
+          // Collect ledge coins
+          for (const c of obj.ledgeCoins) {
+            if (!c.alive) continue;
+            const cx = obj.group.position.x + c.mesh.position.x;
+            const cz = obj.group.position.z + c.mesh.position.z;
+            const dist2D = Math.sqrt((cx - cat.group.position.x)**2 + (cz - catZ)**2);
+            if (dist2D < 0.9) {
+              c.alive = false;
+              c.mesh.visible = false;
+              score += 25;
+              spawnParticles(new THREE.Vector3(cx, obj.group.position.y + obj.ledgeH + 0.5, cz), COLORS.coin);
+              showToast('+25 🪙 Ledge Coin!');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (!onLedgeThisFrame) {
+    cat.setGroundLevel(0);
+  }
+
+  // Update cat
+  cat.update(dt, 0);
+
+  // ── Collision detection ─────────────────────────────────────────────────
+  const catBoxFinal = cat.getBox();
+
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const obj = objects[i];
+    if (!obj.alive) continue;
+    const ob = obj.getBox();
+
+    if (!catBoxFinal.intersectsBox(ob)) continue;
+
+    if (obj.def.tag === 'collectible') {
+      // Collect
+      const pts = obj.def.score;
+      score += pts;
+      spawnParticles(obj.group.position.clone().setY(0.6), obj.def.color);
+      showToast(`+${pts} ${obj.type === 'GEM' ? '💎' : obj.type === 'BIRD_S' ? '🐦' : '🪙'}`);
+      obj.alive = false;
+      obj.remove();
+      objects.splice(i, 1);
+
+    } else if (obj.def.tag === 'powerup') {
+      const pu = obj.def.pu;
+      powerups[pu] = 8;
+      spawnParticles(obj.group.position.clone().setY(0.8), obj.def.color, 12);
+      const names = { shield: '🛡️ Shield!', magnet: '🧲 Magnet!', speed: '⚡ Speed Boost!' };
+      showToast(names[pu]);
+      obj.alive = false;
+      obj.remove();
+      objects.splice(i, 1);
+      document.getElementById(`pu-${pu}`).classList.add('active');
+
+    } else if (obj.def.tag === 'obstacle') {
+      if (powerups.shield > 0) {
+        spawnParticles(obj.group.position.clone(), COLORS.shield, 6);
+        powerups.shield = 0;
+        document.getElementById('pu-shield').classList.remove('active');
+        showToast('🛡️ Shield blocked hit!');
+        continue;
+      }
+      if (cat.hitFlash > 0) continue; // still invincible
+      takeDamage();
+
+    } else if (obj.def.tag === 'pit') {
+      // Only if cat is in same lane AND no ledge
+      if (obj.lane === cat.lane && !onLedgeThisFrame && cat.y < 0.3) {
+        if (powerups.shield > 0) {
+          powerups.shield = 0;
+          document.getElementById('pu-shield').classList.remove('active');
+          showToast('🛡️ Shield saved you from pit!');
+        } else if (cat.hitFlash <= 0) {
+          takeDamage();
+        }
+      }
+    }
+  }
+
+  // Magnet: attract nearby coins
+  if (powerups.magnet > 0) {
+    for (let i = objects.length - 1; i >= 0; i--) {
+      const obj = objects[i];
+      if (!obj.alive || obj.type !== 'COIN') continue;
+      const dx = cat.group.position.x - obj.group.position.x;
+      const dz = catZ - obj.group.position.z;
+      const dist = Math.sqrt(dx*dx + dz*dz);
+      if (dist < 5) {
+        obj.group.position.x += dx / dist * effectiveSpeed * 0.5 * dt * 8;
+        obj.group.position.z += dz / dist * effectiveSpeed * 0.5 * dt * 8;
+      }
+    }
+  }
+
+  // Input
+  if (keyJustDown('ArrowLeft') || keyJustDown('KeyA')) cat.moveLeft();
+  if (keyJustDown('ArrowRight') || keyJustDown('KeyD')) cat.moveRight();
+  if (keyJustDown('Space') || keyJustDown('ArrowUp') || keyJustDown('KeyW')) cat.jump();
+  if (keyJustDown('ArrowDown') || keyJustDown('KeyS')) cat.startSlide();
+
+  Object.assign(prevKeys, keys);
+
+  // Powerup timers
+  updatePowerupHUD(dt);
+
+  // Score ticks
+  updateHUD();
+
+  // Camera slight sway
+  camera.position.x += (cat.group.position.x * 0.12 - camera.position.x) * dt * 5;
+
+  renderer.render(scene, camera);
+}
+
+// ── Take damage ────────────────────────────────────────────────────────────
+function takeDamage() {
+  lives--;
+  cat.flash();
+  spawnParticles(cat.group.position.clone().setY(0.5), 0xff4422, 10);
+  showToast(lives > 0 ? `💔 Осталось жизней: ${lives}` : '😿 Game Over!');
+  updateHUD();
+  if (lives <= 0) {
+    endGame();
+  }
+}
+
+function endGame() {
+  running = false;
+  gameOver = true;
+  const rank = lbAdd(score);
+  document.getElementById('final-score').textContent = score.toLocaleString();
+  const isRecord = rank === 0 && score > 0;
+  document.getElementById('new-record-msg').style.display = isRecord ? 'block' : 'none';
+  document.getElementById('gameover-screen').style.display = 'flex';
+}
+
+// ── UI bindings ────────────────────────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', () => {
+  document.getElementById('start-screen').style.display = 'none';
+  initGame();
+  running = true;
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+});
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+  document.getElementById('gameover-screen').style.display = 'none';
+  initGame();
+  running = true;
+  lastTime = performance.now();
+});
+
+document.getElementById('lb-btn-start').addEventListener('click', () => {
+  renderLbScreen();
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('lb-screen').style.display = 'flex';
+});
+document.getElementById('lb-btn-go').addEventListener('click', () => {
+  renderLbScreen();
+  document.getElementById('gameover-screen').style.display = 'none';
+  document.getElementById('lb-screen').style.display = 'flex';
+});
+document.getElementById('lb-close-btn').addEventListener('click', () => {
+  document.getElementById('lb-screen').style.display = 'none';
+  if (gameOver) {
+    document.getElementById('gameover-screen').style.display = 'flex';
+  } else {
+    document.getElementById('start-screen').style.display = 'flex';
+  }
+});
+
+// ── Boot render (static preview while on start screen) ────────────────────
+function bootRender() {
+  if (running) return;
+  // Spin static scene
+  requestAnimationFrame(bootRender);
+  if (sunMesh) sunMesh.rotation.y += 0.005;
+  renderer.render(scene, camera);
+}
+
+// Init and show start
+initGame();
+bootRender();
+</script>
+</body>
+</html>
