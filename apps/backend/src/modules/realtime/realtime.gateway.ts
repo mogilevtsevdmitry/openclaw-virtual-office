@@ -47,12 +47,24 @@ export class RealtimeGateway
   private connectedClients: Map<string, ClientMeta> = new Map();
   private initialized = false;
 
+  private readonly jwtSecret: string;
+
   constructor(
     @Inject(WINSTON_MODULE_NEST_PROVIDER)
     private readonly logger: LoggerService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    // SECURITY: fail-fast — never allow fallback JWT secret
+    const secret = this.configService.get<string>('JWT_SECRET');
+    if (!secret || secret.length < 32) {
+      throw new Error(
+        '[SECURITY] JWT_SECRET must be set and at least 32 characters long ' +
+          '(RealtimeGateway). Set a strong random secret before starting the application.',
+      );
+    }
+    this.jwtSecret = secret;
+  }
 
   afterInit(server: Server) {
     this.initialized = true;
@@ -80,7 +92,7 @@ export class RealtimeGateway
     if (authToken) {
       try {
         const payload = this.jwtService.verify(authToken, {
-          secret: this.configService.get<string>('JWT_SECRET') || 'fallback-secret-change-in-prod',
+          secret: this.jwtSecret,
         });
         userId = payload.sub;
         tenantId = payload.tenantId;
