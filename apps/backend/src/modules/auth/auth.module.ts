@@ -18,10 +18,18 @@ import { USER_REPOSITORY } from './domain/user.repository.interface';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'fallback-secret-change-in-prod',
-        signOptions: { expiresIn: '15m' },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+        if (!jwtSecret || jwtSecret.length < 32) {
+          throw new Error(
+            '[SECURITY] JWT_SECRET must be set and at least 32 characters long.',
+          );
+        }
+        return {
+          secret: jwtSecret,
+          signOptions: { expiresIn: '15m' },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

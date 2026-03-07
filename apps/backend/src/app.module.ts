@@ -1,6 +1,7 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
 import { LoggerModule } from './logging/logger.module';
@@ -16,6 +17,9 @@ import { AuditModule } from './modules/audit/audit.module';
 import { OpenClawModule } from './modules/openclaw/openclaw.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { PipelineModule } from './modules/pipeline/pipeline.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { EventsModule } from './modules/events/events.module';
+import { PoliciesModule } from './modules/policies/policies.module';
 import { RequestContextMiddleware } from './logging/request-context.middleware';
 import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
 
@@ -26,6 +30,14 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
       isGlobal: true,
       envFilePath: '.env',
     }),
+
+    // Rate limiting (global default: 100 req / 60s per IP)
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,   // 60 seconds window
+        limit: 100,    // max 100 requests per IP per window (default)
+      },
+    ]),
 
     // Event Emitter (для domain events)
     EventEmitterModule.forRoot({
@@ -56,8 +68,16 @@ import { JwtAuthGuard } from './modules/auth/infrastructure/jwt-auth.guard';
     OpenClawModule,   // OpenClaw system agents roster
     TasksModule,      // Task management
     PipelineModule,   // Pipeline BC: projects, runs, stages, artifacts
+    DashboardModule,  // Dashboard KPI aggregations
+    EventsModule,     // Activity log: /events, /audit
+    PoliciesModule,   // Policy CRUD: /policies
   ],
   providers: [
+    // Global rate limiting guard (ThrottlerGuard applies globally)
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     // Global JWT guard (bypass with @Public() decorator)
     {
       provide: APP_GUARD,

@@ -2,8 +2,9 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { LoggerService } from '@nestjs/common';
+import { LoggerService, ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 
 async function bootstrap() {
@@ -22,6 +23,21 @@ async function bootstrap() {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { IoAdapter } = require('/root/projects/openclaw-virtual-office/apps/backend/node_modules/@nestjs/platform-socket.io');
   app.useWebSocketAdapter(new IoAdapter(app.getHttpServer()));
+
+  // Security headers (helmet)
+  app.use(helmet());
+
+  // Global validation pipe — strips unknown fields, validates all DTOs
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,           // strip unknown properties
+      forbidNonWhitelisted: true, // throw 400 if unknown properties passed
+      transform: true,           // auto-transform primitives to declared types
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   // Cookie parser for refresh token
   app.use(cookieParser());
